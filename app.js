@@ -3,6 +3,7 @@ import {
     getFirestore,
     collection,
     addDoc,
+    getDocs,
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -19,3 +20,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+const COL_NAME = "pesticides";
+
+// =============================================
+// firebaseからデータを全件取得
+// =============================================
+
+async function fetchAllPesticides() {
+    const snap = await getDocs(collection(db, COL_NAME));
+    const list = [];
+    snap.forEach((doc) => {
+        list.push({id: doc.id, ...doc.data()});
+    });
+    return list; 
+};
+
+(async () => {
+    const all = await fetchAllPesticides();
+    console.log("Firebaseの全マスタデータ", all);
+})();
