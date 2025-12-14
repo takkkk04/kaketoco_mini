@@ -9,7 +9,7 @@ import {
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    
+    apiKey: 
     authDomain: "kaketoco-001.firebaseapp.com",
     projectId: "kaketoco-001",
     storageBucket: "kaketoco-001.firebasestorage.app",
