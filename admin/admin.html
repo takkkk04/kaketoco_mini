@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カケトコ_mini_管理者画面</title>
+    <link rel="stylesheet" href="./css/reset.css">
+    <link rel="stylesheet" href="./css/admin.css">
+</head>
+
+<body>
+    <h1>カケトコmini 農薬データ管理</h1>
+    <form id="pesticide_form">
+        <div>
+            <label for="number">number(登録番号)</label>
+            <input type="number" id="number">
+        </div>
+
+        <div>
+            <label for="name">name(農薬名)</label>
+            <input type="text" id="name">
+        </div>
+
+        <div>
+            <label for="category">category(カテゴリ)</label>
+            <select id="category">
+                <option value="殺虫剤">殺虫剤</option>
+                <option value="殺菌剤">殺菌剤</option>
+                <option value="除草剤">除草剤</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="crop">crop(作物名)<br>
+                <small>かんきつ,りんご,等</small>
+            </label>
+            <input type="text" id="crop" placeholder="カンマ区切り">
+        </div>
+
+        <div>
+            <label for="target">target(病害虫)<br>
+                <small>アブラムシ,コナジラミ,等</small>
+            </label>
+            <input type="text" id="target" placeholder="カンマ区切り">
+        </div>
+
+        <div>
+            <label for="interval">interval(収穫前日数)</label>
+            <input type="number" id="interval" min="0">
+        </div>
+
+        <div>
+            <label for="magnification">magnification(希釈倍率)</label>
+            <input type="number" id="magnification" min="0">
+        </div>
+
+        <div>
+            <label for="times">times(使用回数)</label>
+            <input type="number" id="times" min="0">
+        </div>
+
+        <div>
+            <label for="score">score(カケトコスコア)</label>
+            <input type="number" id="score" min="0" max="100">
+        </div>
+
+        <div>
+            <label for="shopify_id">shopify_id(Shopify_ID)</label>
+            <input type="text" id="shopify_id" placeholder="hogehoge_flowable">
+        </div>
+
+        <button type="button" id="save_btn">保存</button>
+
+    </form>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script type="module" src="admin.js"></script>
+
+</body>
+
+</html>
