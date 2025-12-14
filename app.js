@@ -31,12 +31,90 @@ async function fetchAllPesticides() {
     const snap = await getDocs(collection(db, COL_NAME));
     const list = [];
     snap.forEach((doc) => {
-        list.push({id: doc.id, ...doc.data()});
+        list.push({ id: doc.id, ...doc.data() });
     });
-    return list; 
+    return list;
 };
 
 (async () => {
     const all = await fetchAllPesticides();
     console.log("Firebaseの全マスタデータ", all);
 })();
+
+// =============================================
+// HTMLエスケープ,だいたい入れとくもん、コピペでOKぽい
+// &とか<とかそのまま入力したら事故るので変換する
+// =============================================
+function escapeHTML(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+// =============================================
+// 検索結果表示
+// =============================================
+async function renderResults (items) {
+    const $tbody = $("#result_table tbody");
+    $tbody.empty();
+
+    // 件数表示
+    $("#result_count").text(`${items.length}件`);
+
+    for (let i = 0; i < items.length; i++) {
+        const p = items[i];
+
+        //データがnullの場合だけ空文字に変換
+        const magnification = (p.magnification ?? "");
+        const times = (p.times ?? "");
+        const interval = (p.interval ?? "");
+        const score = (p.score ?? "");
+
+        //データを表示
+        const rowHtml = `
+        <tr>
+            <td>${escapeHTML(p.name)}</td>
+            <td>${escapeHTML(magnification)}</td>
+            <td>${escapeHTML(times)}</td>
+            <td>${escapeHTML(interval)}</td>
+            <td>${escapeHTML(score)}</td>
+            <td>(あとで購入ボタン)</td>
+        </tr>
+        `;
+        $tbody.append(rowHtml);           
+    };
+}
+
+// =============================================
+// 検索ボタンクリックイベント
+// =============================================
+
+// データ取得して表示
+async function handleSearch() {
+    const category = $("#category").val();
+    const all = await fetchAllPesticides();
+
+    const filtered = all.filter((p) => p.category === category);
+
+    await renderResults(all);
+}
+
+$(function(){
+    $("#search_btn").on("click",async function(){
+        try {
+            await handleSearch();
+        } catch (e){
+            console.error(e);
+            alert("データの取得に失敗しました");
+        }
+    });
+
+    $("#reset_btn").on("click", function(){
+        $("#result_table tbody").empty();
+        $("#result_count").text("0件")
+    });
+});
