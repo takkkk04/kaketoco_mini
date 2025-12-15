@@ -96,11 +96,27 @@ async function renderResults (items) {
 // データ取得して表示
 async function handleSearch() {
     const category = $("#category").val();
+    const crop = $("#crop").val();
+    const target = $("#target").val();
     const all = await fetchAllPesticides();
 
-    const filtered = all.filter((p) => p.category === category);
+    const filtered = all.filter((p) =>{
+        //カテゴリ選択、なしはfalse
+        if (p.category !== category) return false;
+        //作物選択、未選択でもtrue
+        if (crop) {
+            const crops = Array.isArray(p.crops) ? p.crops : [];
+            if (!crops.includes(crop)) return false;
+        }
+        //病害虫選択、未選択でもtrue
+        if (target) {
+            const targets = Array.isArray(p.targets) ? p.targets : [];
+            if (!targets.includes(target)) return false;
+        }
+        return true;
+    });
 
-    await renderResults(all);
+    await renderResults(filtered);
 }
 
 $(function(){
