@@ -56,6 +56,49 @@ function escapeHTML(str) {
 }
 
 // =============================================
+// HTMLのセレクトボックスの中身を作る関数
+// =============================================
+function populateSelect($select, values) {
+    //最初の「指定なし」だけ残す
+    $select.find("option:not(:first)").remove();
+    //プルダウンの中に作物名、病害虫名をぶちこむ
+    values.forEach((v) => {
+        const option = `<option value="${v}">${v}</option>`;
+        $select.append(option);
+    })
+}
+
+// =============================================
+// プルダウンの中身をfirebaseから取ってくる
+// =============================================
+async function setupPulldowns() {
+    const all = await fetchAllPesticides();
+
+    //Setは重複を自動で消してくれる
+    const cropSet = new Set();
+    const targetSet = new Set();
+
+    //全データから作物名、病害虫名の配列をSetに入れる→重複が消える
+    all.forEach((p) => {
+        if (Array.isArray(p.crop)) {
+            p.crop.forEach((c) => cropSet.add(c));
+        }
+
+        if (Array.isArray(p.target)) {
+            p.target.forEach((t) => targetSet.add(t));
+        }        
+    });
+
+    //Setを配列に戻して、ついでにソートもかける
+    const crops = Array.from(cropSet).sort();
+    const targets = Array.from(targetSet).sort();
+
+    //上のセレクトボックス作る関数に入れる
+    populateSelect($("#crop"),crops);
+    populateSelect($("#target"),targets);
+}
+
+// =============================================
 // 検索結果表示
 // =============================================
 async function renderResults (items) {
@@ -105,12 +148,12 @@ async function handleSearch() {
         if (p.category !== category) return false;
         //作物選択、未選択でもtrue
         if (crop) {
-            const crops = Array.isArray(p.crops) ? p.crops : [];
+            const crops = Array.isArray(p.crop) ? p.crop : [];
             if (!crops.includes(crop)) return false;
         }
         //病害虫選択、未選択でもtrue
         if (target) {
-            const targets = Array.isArray(p.targets) ? p.targets : [];
+            const targets = Array.isArray(p.target) ? p.target : [];
             if (!targets.includes(target)) return false;
         }
         return true;
@@ -120,6 +163,10 @@ async function handleSearch() {
 }
 
 $(function(){
+    //プルダウンの中身セットアップ
+    setupPulldowns();
+
+    //検索ボタンクリックイベント
     $("#search_btn").on("click",async function(){
         try {
             await handleSearch();
@@ -129,6 +176,7 @@ $(function(){
         }
     });
 
+    //リセットボタンクリックイベント
     $("#reset_btn").on("click", function(){
         $("#result_table tbody").empty();
         $("#result_count").text("0件")
