@@ -21,11 +21,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const COL_NAME = "pesticides";
-
 // =============================================
 // firebaseからデータを全件取得
 // =============================================
+const COL_NAME = "pesticides";
 
 async function fetchAllPesticides() {
     const snap = await getDocs(collection(db, COL_NAME));
@@ -97,6 +96,82 @@ async function setupPulldowns() {
     populateSelect($("#crop"),crops);
     populateSelect($("#target"),targets);
 }
+
+// =============================================
+// +++++++++++++++++++++++++++++++++++++++++++++
+// shopify SDK連携（SDK＝API＋いろいろな機能）
+// +++++++++++++++++++++++++++++++++++++++++++++
+// =============================================
+
+//ドメイン＝住所
+const SHOPIFY_DOMAIN = "xn-lckmg7f.myshopify.com";
+//shopifyのAPIキー（公開キーだからいちいち消さなくていい）
+const SHOPIFY_STOREFRONT_TOKEN = "bc25ee7aec5d0c9de8b934c6f8e0aa90";
+
+let shopifyUI = null;
+
+// =============================================
+// ShopifyのSDKを読み込む関数
+// SDKとUIは別々に読み込まれるので、両方読み込まれるまで待つ
+// =============================================
+
+function loadShopifyBuySDK() {
+    return new Promise((resolve, reject) => {
+        const scriptURL = "https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js";
+
+        //SDKとUIが読み込まれていればOK
+        if (window.ShopifyBuy && window.ShopifyBuy.UI) {
+            resolve();
+            return;
+        }
+
+        //SDKだけ読み込まれていたら、UIの読み込みを待つ          
+        if (window.ShopifyBuy && !window.ShopifyBuy.UI) {
+            const t = setInterval(() => {
+                if (window.ShopifyBuy.UI) {
+                    clearInterval(t);
+                    resolve();
+                }
+            },50);  //0.5秒ごとにUIが読み込まれたかチェック
+
+            //10秒経ったらタイムアウト
+            setTimeout(() => {
+                clearInterval(t);
+                reject(new Error("ShopifyBuy.UIが読み込めませんでした"));
+            },10000);
+            return;
+        }
+        
+        //まだなにも読み込まれてない時、SDKの読み込みをしろ
+        //まずscriptタグを作れ
+        const script = document.createElement("script");
+        script.async = true;
+        //URLを読みにいけ
+        script.src = scriptURL;
+        //読み込めたらresolve、失敗したらreject
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("ShopifyBuy SDKの読み込みに失敗しました"));
+        //HTMLのheadかbodyにscriptタグをぶちこめ
+        (document.head || document.body).appendChild(script);
+    });
+}
+
+async function prepareShopifyUI() {
+    //UIがすでにあったらそれを返す
+    if (shopifyUI) return shopifyUI;
+    //SDKとUIがちゃんと読み込まれるまで待つ
+    await loadShopifyBuySDK();
+    //shopifyに繋ぐ（クライアントを作る）
+    const client = window.ShopifyBuy.buildClient({
+        domain: SHOPIFY_DOMAIN,
+        storefrontAccessToken: SHOPIFY_STOREFRONT_TOKEN,
+    });
+    //UIが準備できるまで待つ
+    shopifyUI = await window.ShopifyBuy.UI.onReady(client);
+    return shopifyUI;
+}
+
+
 
 // =============================================
 // 検索結果表示
