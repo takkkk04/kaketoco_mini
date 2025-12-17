@@ -156,6 +156,9 @@ function loadShopifyBuySDK() {
     });
 }
 
+// =============================================
+// ShopifyのUIを準備する関数
+// =============================================
 async function prepareShopifyUI() {
     //UIがすでにあったらそれを返す
     if (shopifyUI) return shopifyUI;
