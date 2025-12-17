@@ -174,7 +174,39 @@ async function prepareShopifyUI() {
     return shopifyUI;
 }
 
+// =============================================
+// shopifyのデータを表示する関数
+// =============================================
+async function renderBuyButton (node, productID) {
+    // productIDがなければ無視
+    if (!productID) return;
+    //上で作ったUI準備関数を呼ぶ
+    const ui = await prepareShopifyUI();
 
+    //UIのコンポーネントを作る
+    ui.createComponent("product", {
+        //shopifyの商品IDごとに取ってこい
+        id: String(productID),
+        node,
+        moneyFormat: "%7B%7Bamount_no_decimals%7D%7D%E5%86%86",
+        options: {
+            product: {
+                contents: {
+                    img: true,
+                    title: false,
+                    price: true,
+                },
+                text: {button: "購入"},
+            },
+            cart: {
+                text: {
+                    total: "小計",
+                    button: "購入手続きへ",
+                }
+            },
+        },
+    });
+}
 
 // =============================================
 // 検索結果表示
@@ -194,6 +226,7 @@ async function renderResults (items) {
         const times = (p.times ?? "");
         const interval = (p.interval ?? "");
         const score = (p.score ?? "");
+        const buyCellId = `buy-${p.id}`;
 
         //データを表示
         const rowHtml = `
@@ -203,10 +236,13 @@ async function renderResults (items) {
             <td>${escapeHTML(times)}</td>
             <td>${escapeHTML(interval)}</td>
             <td>${escapeHTML(score)}</td>
-            <td>(あとで購入ボタン)</td>
+            <td><div id="${buyCellId}"></div></td>
         </tr>
         `;
-        $tbody.append(rowHtml);           
+        $tbody.append(rowHtml);
+
+        const node = document.getElementById(buyCellId);
+        await renderBuyButton(node, p.shopify_id);
     };
 }
 
