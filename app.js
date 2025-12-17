@@ -212,8 +212,8 @@ async function renderBuyButton (node, productID) {
 // 検索結果表示
 // =============================================
 async function renderResults (items) {
-    const $tbody = $("#result_table tbody");
-    $tbody.empty();
+    const $list = $("#result_list");
+    $list.empty();
 
     // 件数表示
     $("#result_count").text(`${items.length}件`);
@@ -226,20 +226,25 @@ async function renderResults (items) {
         const times = (p.times ?? "");
         const interval = (p.interval ?? "");
         const score = (p.score ?? "");
+        //shopifyの購入ボタンを入れるとこ
         const buyCellId = `buy-${p.id}`;
 
         //データを表示
-        const rowHtml = `
-        <tr>
-            <td>${escapeHTML(p.name)}</td>
-            <td>${escapeHTML(magnification)}</td>
-            <td>${escapeHTML(times)}</td>
-            <td>${escapeHTML(interval)}</td>
-            <td>${escapeHTML(score)}</td>
-            <td><div id="${buyCellId}"></div></td>
-        </tr>
+        const cardHtml = `
+        <article class="result_card">
+            <div class="card_title">${escapeHTML(p.name)}</div>
+            <div class="card_body">
+                <div class="card_shopify" id="${buyCellId}"></div>
+                <div class="card_specs">
+                    <div class="spec_row"><span class="spec_label">希釈倍率</span><span class="spec_val">${escapeHTML(magnification)}</span></div>
+                    <div class="spec_row"><span class="spec_label">使用回数</span><span class="spec_val">${escapeHTML(times)}</span></div>
+                    <div class="spec_row"><span class="spec_label">収穫前日数</span><span class="spec_val">${escapeHTML(interval)}</span></div>
+                    <div class="spec_row"><span class="spec_label">カケトコスコア</span><span class="spec_val">${escapeHTML(score)}</span></div>
+                </div>
+            </div>
+        </article>
         `;
-        $tbody.append(rowHtml);
+        $list.append(cardHtml);
 
         const node = document.getElementById(buyCellId);
         await renderBuyButton(node, p.shopify_id);
@@ -292,7 +297,7 @@ $(function(){
 
     //リセットボタンクリックイベント
     $("#reset_btn").on("click", function(){
-        $("#result_table tbody").empty();
+        $("#result_list").empty();
         $("#result_count").text("0件")
     });
 });
