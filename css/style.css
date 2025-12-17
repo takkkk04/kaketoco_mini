@@ -97,6 +97,70 @@ select{
     font-size: 12px;
 }
 
+#result_list{
+    display: flex;
+    flex-direction: column;
+    gap: 12px
+}
+
+.result_card {
+    background: #ffffff;
+    border: 1px solid #d7e6f7;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 6px 18px rgba(10, 30, 60, 0.06);
+}
+
+.card_title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #102030;
+}
+
+.card_body {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.card_shopify {
+    width: 150px;
+    flex: 0 0 150px;
+    background: #f8fbff;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.card_specs {
+    flex: 1;
+    min-width: 0;
+}
+
+.spec_row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e5effb;
+    font-size: 12px;
+}
+
+.spec_row:last-child {
+    border-bottom: none;
+}
+
+.spec_label {
+    color: #4a6075;
+}
+
+.spec_val {
+    font-weight: bold;
+    color: #102030;
+}
+
 .shopify-buy__btn {
     background: #ff7a00 !important;
     border-color: #ff7a00 !important;
