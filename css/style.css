@@ -1,0 +1,128 @@
+body {
+    font-family: Arial, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #f4f9ff;
+    color: #102030;
+}
+
+.app_header {
+    background: #ffffff;
+    border-bottom: 1px solid #d7e6f7;
+    padding: 12px 16px;
+}
+
+.app_header h1 {
+    margin: 0;
+    font-size: 18px;
+    color: #1f6feb;
+    font-weight: bold;
+}
+
+.app_main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.search_section,
+.result_section {
+    background: #ffffff;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.search_section h2,
+.result_section h2 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.form_row {
+    margin-bottom: 12px;
+}
+
+.form_row label {
+    display: block;
+    font-size: 12px;
+    color: #4a6075;
+    margin-bottom: 6px;
+}
+
+select{
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+}
+
+.form_row_btn {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#search_btn,
+#reset_btn {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#search_btn {
+    background: #1f6feb;
+    color: #ffffff;
+    border-color: #1f6feb;
+}
+
+#reset_btn {
+    background: #ffffff;
+}
+
+.result_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#result_count {
+    background: #e6f2ff;
+    color: #1f6feb;
+    border: 1px solid #d7e6f7;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.shopify-buy__btn {
+    background: #ff7a00 !important;
+    border-color: #ff7a00 !important;
+    border-radius: 10px !important;
+    font-weight: bold !important;
+}
+
+.shopify-buy__product-img-wrapper img {
+    border-radius: 10px;
+    border:1px solid #d7e6f7
+}
+
+.shopify-buy__product__price,
+.shopify-buy__product__actual-price {
+    font-weight: bold;
+    color: #102030;
+}
+
+@media (max-width: 899px) {
+    .form_row_btn {
+        flex-direction: column;
+    }
+    .shopify-buy__cart-wrapper {
+        position: static;
+        width: auto;
+        max-height: none;
+        overflow: visible;
+    }
+}
