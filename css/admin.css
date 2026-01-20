@@ -1,0 +1,88 @@
+body {
+    font-family: Arial, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #f4f9ff;
+    color: #102030;
+    padding: 12px;
+    font-size: 13px;
+}
+
+h1 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #1f6feb;
+}
+
+/* 保存メッセージ */
+p {
+    background: #e6f2ff;
+    border: 1px solid #d7e6f7;
+    color: #1f6feb;
+    padding: 6px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+/* フォーム全体 */
+form {
+    background: #ffffff;
+    border: 1px solid #d7e6f7;
+    border-radius: 10px;
+    padding: 12px;
+    max-width: 640px;
+}
+
+/* 各入力行 */
+form > div {
+    margin-bottom: 6px;
+}
+
+/* ラベル */
+label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 2px;
+    color: #405870;
+}
+
+label small {
+    font-weight: normal;
+    color: #7a8fa6;
+    font-size: 10px;
+}
+
+/* 入力欄 */
+input,
+select {
+    width: 100%;
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid #d7e6f7;
+    font-size: 13px;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #1f6feb;
+    background: #f8fbff;
+}
+
+/* 保存ボタン */
+button {
+    margin-top: 8px;
+    padding: 8px;
+    width: 100%;
+    border-radius: 8px;
+    border: none;
+    background: #1f6feb;
+    color: #ffffff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+button:hover {
+    opacity: 0.9;
+}

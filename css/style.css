@@ -1,0 +1,848 @@
+body {
+    font-family: Arial, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #f4f9ff;
+    color: #102030;
+}
+
+.app_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    box-sizing: border-box;
+    background: #ffffff;
+    border-bottom: 1px solid #d7e6f7;
+    padding: 12px 16px;
+    width: 100%;
+    z-index: 1000;
+}
+
+.app_header h1 {
+    margin: 0;
+    font-size: 18px;
+    color: #1f6feb;
+    font-weight: bold;
+}
+
+.app_title a {
+    color: inherit;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.app_title a:visited {
+    color: inherit;
+}
+
+.app_title a:hover {
+    opacity: 0.85;
+}
+
+/* ========================================
+ハンバーガーメニュー
+======================================== */
+.header_menu {
+    position: relative;
+}
+
+.menu_btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+    background: #ffffff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.menu_icon {
+    width: 18px;
+    height: 12px;
+    position: relative;
+    display: block;
+}
+
+.menu_icon::before,
+.menu_icon::after,
+.menu_icon {
+    background: transparent;
+}
+
+.menu_icon::before,
+.menu_icon::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 18px;
+    height: 2px;
+    background: #1f6feb;
+    border-radius: 99px;
+}
+
+.menu_icon::before {
+    top: 0;
+}
+
+.menu_icon::after {
+    bottom: 0;
+}
+
+/* 真ん中の線 */
+.menu_icon {
+    background: linear-gradient(#1f6feb, #1f6feb) center/18px 2px no-repeat;
+}
+
+.menu_panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 160px;
+    background: #ffffff;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(10, 30, 60, 0.12);
+    padding: 6px;
+    z-index: 50;
+}
+
+.menu_item {
+    display: block;
+    padding: 10px 10px;
+    border-radius: 10px;
+    color: #102030;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.menu_item:hover {
+    background: #e6f2ff;
+}
+
+/* 画面読み上げ用 */
+.sr_only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ========================================
+会員登録ボタン
+======================================== */
+.register_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+    background: #ffffff;
+    color: #1f6feb;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.register_btn:hover {
+    background: #e6f2ff;
+}
+
+/* ========================================
+検索部
+======================================== */
+.app_main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-top: 77px;
+}
+
+.search_section,
+.result_section {
+    background: #ffffff;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.search_section h2,
+.result_section h2 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.form_row {
+    margin-bottom: 12px;
+}
+
+.form_row label {
+    display: block;
+    font-size: 12px;
+    color: #4a6075;
+    margin-bottom: 6px;
+}
+
+/* ========================================
+カテゴリ：アイコン選択
+======================================== */
+.category_picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.cat_item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+.cat_btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #d7e6f7;
+    background: #f8fbff;
+    cursor: pointer;
+
+    transition: transform .05s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.cat_btn img {
+    width: 26px;
+    height: 26px;
+    display: block;
+}
+
+.cat_text {
+    font-weight: 700;
+    font-size: 13px;
+    color: #102030;
+}
+
+.cat_item input:checked+.cat_btn {
+    background: #e6f2ff;
+    border-color: #1f6feb;
+    box-shadow: 0 8px 18px rgba(31, 111, 235, 0.18);
+}
+
+.cat_item .cat_btn:active {
+    transform: translateY(1px);
+}
+
+/* 検索プルダウン以下
+------------------------------- */
+select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+select option {
+    font-size: 14px;
+}
+
+.form_row_btn {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#search_btn,
+#reset_btn {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#search_btn {
+    background: #1f6feb;
+    color: #ffffff;
+    border-color: #1f6feb;
+}
+
+#reset_btn {
+    background: #ffffff;
+}
+
+/* =========================================================
+    Select2プルダウン
+   ========================================================= */
+/* コンテナは必ず100% */
+.select2-container {
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* form内でのズレ防止（inline-block由来の謎余白対策） */
+.form_row .select2-container {
+    display: block;
+}
+
+/* 本体（selectの枠） */
+.select2-container--default .select2-selection--single {
+    box-sizing: border-box;
+    height: 40px;
+    /* selectと高さを合わせる */
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    background: #ffffff;
+
+    /* 中の文字を縦中央に */
+    display: flex;
+    align-items: center;
+
+    /* 左右の余白（selectのpadding感） */
+    padding: 0 8px;
+}
+
+/* 選択中テキスト（デフォのpadding/line-heightがズレ原因になりがち） */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 14px;
+    color: #102030;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 右の▼（arrow） */
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 40px;
+    top: 0;
+    right: 6px;
+    width: 20px;
+}
+
+/* クリアボタンを使う場合の位置（使ってなければ害なし） */
+.select2-container--default .select2-selection--single .select2-selection__clear {
+    height: 40px;
+    line-height: 40px;
+    margin-right: 6px;
+}
+
+/* ドロップダウン枠（一覧の枠） */
+.select2-container--default .select2-dropdown {
+    border: 1px solid #d7e6f7;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* 検索入力（ドロップダウン上部） */
+.select2-container--default .select2-search--dropdown {
+    padding: 8px;
+    border-bottom: 1px solid #e5effb;
+    background: #ffffff;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+    border-color: #1f6feb;
+}
+
+/* 一覧の項目 */
+.select2-container--default .select2-results__option {
+    font-size: 14px;
+    padding: 10px 12px;
+}
+
+/* hover */
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background: #e6f2ff;
+    color: #102030;
+}
+
+/* 選択中 */
+.select2-container--default .select2-results__option--selected {
+    background: #f4f9ff;
+}
+
+/* 無効化時 */
+.select2-container--default.select2-container--disabled .select2-selection--single {
+    background: #f8fbff;
+    color: #8aa0b7;
+}
+
+/* 余白ズレが出る環境対策（保険） */
+.select2-container * {
+    box-sizing: border-box;
+}
+
+/* 使用方法ラジオボタン
+======================================== */
+.method_picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.method_item {
+    position: relative;
+    display: block;
+}
+
+.method_item input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+
+.method_btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px 14px;
+    border-radius: 999px;
+    /* ← カテゴリとの差別化ポイント */
+    border: 1px solid #d7e6f7;
+    background: #f8fbff;
+    cursor: pointer;
+
+    font-weight: 700;
+    font-size: 13px;
+    color: #102030;
+    white-space: nowrap;
+
+    transition: transform .05s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+/* 選択中（カテゴリと同トーン） */
+.method_item input:checked+.method_btn {
+    background: #e6f2ff;
+    border-color: #1f6feb;
+    box-shadow: 0 8px 18px rgba(31, 111, 235, 0.18);
+}
+
+/* 押下感 */
+.method_item .method_btn:active {
+    transform: translateY(1px);
+}
+
+/* ========================================
+結果表示部
+======================================== */
+
+.result_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.result_left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.result_right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#result_count {
+    background: #e6f2ff;
+    color: #1f6feb;
+    border: 1px solid #d7e6f7;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.sort_label {
+    font-size: 12px;
+    color: #4a6075;
+}
+
+#result_list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px
+}
+
+.result_card {
+    background: #ffffff;
+    border: 1px solid #d7e6f7;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 6px 18px rgba(10, 30, 60, 0.06);
+}
+
+.card_title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #102030;
+}
+
+.card_title_name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rac_code {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #d0d7de;
+    color: #6b7280;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* カード左側ー商品画像
+------------------------------- */
+.card_mid {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.card_left {
+    width: 150px;
+    flex: 0 0 150px;
+    background: #f8fbff;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.shopify_img img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+}
+
+/* カード右側ースペック
+------------------------------- */
+.card_specs {
+    flex: 1;
+    min-width: 0;
+}
+
+.spec_row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e5effb;
+    font-size: 12px;
+}
+
+.spec_row:last-child {
+    border-bottom: none;
+}
+
+.spec_label {
+    color: #4a6075;
+}
+
+.spec_val {
+    font-weight: bold;
+}
+
+/* 特徴バッジ */
+.badge_row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #d7e6f7;
+    background: #f8fbff;
+    font-size: 11px;
+    font-weight: 500;
+    color: #102030;
+    white-space: nowrap;
+}
+
+.badge_systemic {
+    background: #e6f2ff;
+    border-color: #1f6feb;
+}
+
+.badge_translaminar {
+    background: #e6f2ff;
+    border-color: #1f6feb;
+}
+
+.badge_quickly {
+    background: #fff1f1;
+    border-color: #f3c2c2;
+    color: #c53030;
+}
+
+
+/* カード下部ー作物・病害虫一覧
+------------------------------- */
+.card_lists {
+    margin-top: 10px;
+    border-top: 1px dashed #e5effb;
+    padding-top: 10px;
+    display: grid;
+    gap: 8px;
+}
+
+.card_detail {
+    background: #f8fbff;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card_detail summary {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    color: #1f6feb;
+    padding: 10px 12px;
+    list-style: none;
+    /* デフォルト三角を消す（Chrome系） */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.card_detail summary::-webkit-details-marker {
+    display: none;
+    /* Safari/Chrome */
+}
+
+/* 右側に▼アイコンっぽいものを付ける */
+.card_detail summary::after {
+    content: "▼";
+    font-size: 10px;
+    color: #4a6075;
+    transition: transform 0.15s ease;
+}
+
+.card_detail[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.card_detail .detail_body {
+    padding: 10px 12px 12px;
+    background: #ffffff;
+    border-top: 1px solid #e5effb;
+}
+
+.card_detail p {
+    margin: 0;
+    font-size: 12px;
+    color: #4a6075;
+}
+
+.card_detail ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 4px;
+}
+
+.card_detail li {
+    margin: 0;
+    font-size: 12px;
+    color: #102030;
+    line-height: 1.35;
+}
+
+/* =======================================
+カード下部（Shopify：規格 / 価格 / 購入）
+左：規格 → 価格（縦）
+右：購入ボタン
+======================================= */
+
+.card_bottom {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #e5effb;
+}
+
+/* Shopify product ルートをGrid化 */
+.card_bottom .shopify_mount .shopify-buy__product {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: center;
+
+    margin: 0;
+    padding: 0;
+}
+
+/* =====================
+規格（select）
+===================== */
+.card_bottom .shopify-buy__product__variant-selectors {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.card_bottom .shopify-buy__option-select-wrapper {
+    margin: 0;
+    padding: 0;
+}
+
+.card_bottom .shopify-buy__option-select__label {
+    display: none;
+}
+
+.card_bottom .shopify-buy__option-select__select {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 8px;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    background: #ffffff;
+
+    font-size: 16px;
+    font-weight: 500;
+    color: #102030;
+
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* ShopifyのデカいV（SVG）を消す */
+.card_bottom .shopify-buy__select-icon {
+    display: none;
+}
+
+/* =====================
+価格
+===================== */
+.card_bottom .shopify-buy__product__price {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+    padding-left: 12px;
+}
+
+.card_bottom .visuallyhidden {
+    display: none;
+}
+
+.card_bottom .shopify-buy__product__actual-price {
+    font-weight: bold;
+    font-size: 14px;
+    color: red;
+}
+
+.card_bottom .shopify-buy__product__actual-price::after {
+    content: "（税込）";
+    margin-left: 4px;
+    font-size: 12px;
+    color: #4a6075;
+    font-weight: normal;
+}
+
+/* =====================
+購入ボタン
+===================== */
+.card_bottom .shopify-buy__btn-wrapper {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 160px;
+
+    margin: 0;
+    padding: 0;
+}
+
+.card_bottom .shopify-buy__btn {
+    width: 100%;
+    padding: 8px;
+
+    background: #ff9f43;
+    border: 1px solid #ff9f43;
+    border-radius: 10px;
+
+    color: #ffffff;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.card_bottom .shopify-buy__btn:hover {
+    background: #ff8f1f;
+    border-color: #ff7f24;
+}
+
+/* ========================================
+レスポンシブ対応
+======================================== */
+@media (max-width: 899px) {
+
+    select,
+    select option {
+        font-size: 14px;
+    }
+
+    .form_row_btn {
+        flex-direction: column;
+    }
+
+    .shopify-buy__cart-wrapper {
+        position: static;
+        width: auto;
+        max-height: none;
+        overflow: visible;
+    }
+}
