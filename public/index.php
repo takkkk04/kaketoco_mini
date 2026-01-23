@@ -312,6 +312,12 @@ function kaketocoScore(array $p) : int {
     return $total;
 }
 
+// =============================================
+// ログイン・ログアウト処理
+// =============================================
+$isLoggedIn = !empty($_SESSION["user_id"]);
+$userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
+
 ?>
 
 <!DOCTYPE html>
@@ -331,7 +337,17 @@ function kaketocoScore(array $p) : int {
             <a href="./index.php">カケトコ mini</a>
         </h1>
 
-        <a href="./user_create.php" class="register_btn">会員登録</a>
+        <!-- <a href="./user_create.php" class="register_btn">会員登録</a> -->
+        <?php if ($isLoggedIn): ?>
+            <div class="header_user">
+                <span class="user_name">
+                    <?php htmlspecialchars($userName, ENT_QUOTES, "UTF-8") ?>さん
+                </span>
+                <a href="./logout.php" class="logout_btn">ログアウト</a>
+            </div>
+        <?php else: ?>
+            <a href="./login.php" class="register_btn">ログイン</a>
+        <?php endif; ?>
         
         <div class="header_menu">
             <button type="button" id="menu_btn" class="menu_btn" aria-expanded="false" aria-controls="menu_panel">
