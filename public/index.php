@@ -4,7 +4,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/../src/backend/db.php";
 
 // +++++++++++++++++++++++++++++++++++++++++++++
 // =============================================
@@ -27,7 +27,7 @@ $methodGroups = [
         "植溝内土壌散布", "樹幹散布", "添加"]
 ];
 $methodLabels = ["散布", "灌注", "ドローン散布"];
-$sort = $_GET["sort"] ?? "score_desk";
+$sort = $_GET["sort"] ?? "score_desc";
 
 // =============================================
 // ザックリ検索,作物プルダウン
@@ -330,7 +330,7 @@ function kaketocoScore(array $p) : int {
         </h1>
 
         <a href="./user_create.php" class="register_btn">会員登録</a>
-
+        
         <div class="header_menu">
             <button type="button" id="menu_btn" class="menu_btn" aria-expanded="false" aria-controls="menu_panel">
                 <span class="menu_icon" aria-hidden="true"></span>
@@ -338,7 +338,8 @@ function kaketocoScore(array $p) : int {
             </button>
 
             <div id="menu_panel" class="menu_panel" hidden>
-                <a href="./admin/admin.php" class="admin_item">管理画面</a>
+                <a href="./admin/admin.php" class="menu_item">管理画面</a>
+                <a href="./login.php" class="menu_item">ログイン</a>
             </div>
         </div>
     </header>
@@ -354,7 +355,7 @@ function kaketocoScore(array $p) : int {
                             <label class="cat_item">
                                 <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
                                 <span class="cat_btn">
-                                    <img src="image/icon_butterfly.png" alt="">
+                                    <img src="./image/icon_butterfly.png" alt="">
                                     <span class="cat_text">殺虫剤</span>
                                 </span>
                             </label>
@@ -362,7 +363,7 @@ function kaketocoScore(array $p) : int {
                             <label class="cat_item">
                                 <input type="radio" name="category" value="殺菌剤" <?php echo ($category === "殺菌剤") ? "checked" : ""; ?>>
                                 <span class="cat_btn">
-                                    <img src="image/icon_virus.png" alt="">
+                                    <img src="./image/icon_virus.png" alt="">
                                     <span class="cat_text">殺菌剤</span>
                                 </span>
                             </label>
@@ -370,7 +371,7 @@ function kaketocoScore(array $p) : int {
                             <label class="cat_item">
                                 <input type="radio" name="category" value="除草剤" <?php echo ($category === "除草剤") ? "checked" : ""; ?>>
                                 <span class="cat_btn">
-                                    <img src="image/icon_leaf.png" alt="">
+                                    <img src="./image/icon_leaf.png" alt="">
                                     <span class="cat_text">除草剤</span>
                                 </span>
                             </label>
@@ -614,7 +615,7 @@ function kaketocoScore(array $p) : int {
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <!-- Select2 プルダウン内検索 -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script type="module" src="shopify.js"></script>
-    <script src="app.js"></script>
+    <script src="./js/shopify.js"></script>
+    <script src="./js/app.js"></script>
 </body>
 </html>

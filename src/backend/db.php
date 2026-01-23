@@ -1,5 +1,5 @@
 <?php
-$envPath = __DIR__ . "/config/.env.php";
+$envPath = __DIR__ . "/../../config/.env.php";
 
 if (!file_exists($envPath)) {
     exit("config/.env.php が見つかりません");

@@ -25,7 +25,7 @@
         <h2>ログイン</h2>
 
         <?php if ($error === "1"): ?>
-            <p>メールアドレスまたはパスワードが違います。</p>
+            <p class="error_msg">メールアドレスまたはパスワードが違います。</p>
         <?php endif; ?>
 
         <form action="login_act.php" method="POST">
