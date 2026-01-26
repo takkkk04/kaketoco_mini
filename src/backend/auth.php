@@ -10,7 +10,7 @@ function isLoggedIn(): bool {
     return !empty($_SESSION["user_id"]);
 }
 
-function requireLogin(string $redirectTo = "../login.php"): void {
+function requireLogin(string $redirectTo = "/public/login.php"): void {
     if (!isLoggedIn()) {
         header("Location: " . $redirectTo);
         exit();

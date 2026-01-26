@@ -5,6 +5,7 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 session_start();
+$isLoggedIn = !empty($_SESSION["user_id"]);
 
 require_once __DIR__ . "/../src/backend/db.php";
 
@@ -357,7 +358,12 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
 
             <div id="menu_panel" class="menu_panel" hidden>
                 <a href="./admin/admin.php" class="menu_item">管理画面</a>
-                <a href="./login.php" class="menu_item">ログイン</a>
+                <?php if ($isLoggedIn): ?>
+                    <a href="./mypage.php" class="menu_item">マイページ</a>
+                    <a href="./logout.php" class="menu_item">ログアウト</a>
+                <?php else: ?>
+                    <a href="./login.php" class="menu_item">ログイン</a>
+                <?php endif; ?>
             </div>
         </div>
     </header>
