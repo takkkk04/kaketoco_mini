@@ -18,6 +18,7 @@ $userName = currentUserName();
     <title>マイページ</title>
     <link rel="stylesheet" href="./css/reset.css">
     <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/mypage.css">
 </head>
 <body>
     <header class="app_header">
@@ -39,14 +40,21 @@ $userName = currentUserName();
     </header>
 
     <main class="app_main">
-        <section class="search_section">
-            <h2>マイページ</h2>
-            
-            <p><?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?>さん</p>
+        <section class="mypage_layout">
+            <nav class="mypage_menu">
+                <ul>
+                    <li class="active">基本情報</li>
+                    <li>テスト</li>
+                    <li>テスト</li>
+                    <li>テスト</li>
+                    <li>テスト</li>
+                </ul>
+            </nav>
 
-            <div class="form_row_btn">
-                <a href="./logout.php" class="register_btn">ログアウト</a>
-            </div>
+            <div class="mypage_content">
+                <h2>基本情報</h2>
+                <p><?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?> さん</p>
+            </div>            
         </section>
     </main>
 
