@@ -5,9 +5,13 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 session_start();
-$isLoggedIn = !empty($_SESSION["user_id"]);
 
+require_once __DIR__ . "/../src/backend/auth.php";
 require_once __DIR__ . "/../src/backend/db.php";
+
+$isLoggedIn = isLoggedIn();
+$userId = $isLoggedIn ? currentUserId() : null;
+$userName = $isLoggedIn ? currentUserName() : "";
 
 // +++++++++++++++++++++++++++++++++++++++++++++
 // =============================================
@@ -25,9 +29,16 @@ $methodGroups = [
     "灌注" => ["灌注", "株元灌注", "灌水ﾁｭｰﾌﾞを用いた灌注処理", "苗床灌注"],
     "浸漬" => ["120分間鱗片浸漬", "30分間種球浸漬", "30分間苗浸漬"],
     "ドローン散布" => ["無人航空機による散布"],
-    "その他" => ["主幹から株元に散布", "主幹部に吹きつけ", "散布､但し花穂の発生期にはﾏﾙﾁﾌｨﾙﾑ被覆により散布液が直接花穂に飛散しない状態で使用する｡",
-        "木屑排出孔を中心に薬液が滴るまで樹幹注入", "本剤1g当り水1mLの割合で混合し､主幹から主枝の粗皮を環状に剥いだ部分に塗布する｡",
-        "植溝内土壌散布", "樹幹散布", "添加"]
+    "その他" => [
+        "主幹から株元に散布",
+        "主幹部に吹きつけ",
+        "散布､但し花穂の発生期にはﾏﾙﾁﾌｨﾙﾑ被覆により散布液が直接花穂に飛散しない状態で使用する｡",
+        "木屑排出孔を中心に薬液が滴るまで樹幹注入",
+        "本剤1g当り水1mLの割合で混合し､主幹から主枝の粗皮を環状に剥いだ部分に塗布する｡",
+        "植溝内土壌散布",
+        "樹幹散布",
+        "添加"
+    ]
 ];
 $methodLabels = ["散布", "灌注", "ドローン散布"];
 $sort = $_GET["sort"] ?? "score_desc";
@@ -47,13 +58,62 @@ $sort = $_GET["sort"] ?? "score_desc";
 
 //ザックリ作物決め打ちプルダウン
 $quickCropLabels = [
-    "アスパラガス","いちご","えだまめ","おうとう","オクラ","かき","かぶ","かぼちゃ","カリフラワー",
-    "かんきつ","かんしょ","きく","キャベツ","きゅうり","ごぼう","こまつな","さといも",
-    "さやいんげん","さやえんどう","ししとう","しそ","しゅんぎく","しょうが","すいか","ズッキーニ",
-    "セルリー","だいこん","だいず","たまねぎ","てんさい","とうがらし類","トマト","なし","なす",
-    "にがうり","にら","にんじん","にんにく","ねぎ","はくさい","ばれいしょ","ピーマン","ぶどう",
-    "ブロッコリー","ほうれんそう","ミニトマト","メロン","もも","やまのいも","りんご","レタス",
-    "未成熟とうもろこし","茶","野菜類","非結球あぶらな科葉菜類","非結球レタス",
+    "アスパラガス",
+    "いちご",
+    "えだまめ",
+    "おうとう",
+    "オクラ",
+    "かき",
+    "かぶ",
+    "かぼちゃ",
+    "カリフラワー",
+    "かんきつ",
+    "かんしょ",
+    "きく",
+    "キャベツ",
+    "きゅうり",
+    "ごぼう",
+    "こまつな",
+    "さといも",
+    "さやいんげん",
+    "さやえんどう",
+    "ししとう",
+    "しそ",
+    "しゅんぎく",
+    "しょうが",
+    "すいか",
+    "ズッキーニ",
+    "セルリー",
+    "だいこん",
+    "だいず",
+    "たまねぎ",
+    "てんさい",
+    "とうがらし類",
+    "トマト",
+    "なし",
+    "なす",
+    "にがうり",
+    "にら",
+    "にんじん",
+    "にんにく",
+    "ねぎ",
+    "はくさい",
+    "ばれいしょ",
+    "ピーマン",
+    "ぶどう",
+    "ブロッコリー",
+    "ほうれんそう",
+    "ミニトマト",
+    "メロン",
+    "もも",
+    "やまのいも",
+    "りんご",
+    "レタス",
+    "未成熟とうもろこし",
+    "茶",
+    "野菜類",
+    "非結球あぶらな科葉菜類",
+    "非結球レタス",
 ];
 
 $cropOptions = [];
@@ -68,7 +128,8 @@ $stmt = $pdo->prepare(
     FROM pesticides_rules 
     WHERE category = :category AND target <> '' 
     ORDER BY target ASC
-    ");
+    "
+);
 $stmt->execute([":category" => $category]);
 $targetOptions = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -95,7 +156,7 @@ $methodInSql = implode(",", $in);
 // =============================================
 // DBから情報取ってくるSQLゾーン
 // =============================================
-$sql = 
+$sql =
     "SELECT 
         r.*, 
         b.rac_code,
@@ -193,6 +254,46 @@ if ($sort === "name_asc") {
 $count = count($filtered);
 
 // =============================================
+// カード内お気に入り情報取得
+// =============================================
+$favMap = [];
+
+if ($userId !== null && $count > 0) {
+    $regs = [];
+    foreach ($filtered as $row) {
+        $r = (int)($row["registration_number"] ?? 0);
+        if ($r > 0) $regs[] = $r;
+    }
+
+    $regs = array_values(array_unique($regs));
+
+    if (!empty($regs)) {
+        $placeholders = [];
+        $params = [":uid" => $userId];
+        foreach ($regs as $i => $r) {
+            $k = ":r{$i}";
+            $placeholders[] = $k;
+            $params[$k] = $r;
+        }
+
+        $sqlFav =
+            "SELECT registration_number 
+            FROM favorites 
+            WHERE user_id = :uid
+            AND registration_number
+            IN (" . implode(",", $placeholders) . ")";
+
+        $stFav = $pdo->prepare($sqlFav);
+        $stFav->execute($params);
+        $favRegs = $stFav->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($favRegs as $fr) {
+            $favMap[(int)$fr] = true;
+        }
+    }
+}
+
+// =============================================
 // カード内作物、病害虫一覧取得
 // =============================================
 $cropListStmt = $pdo->prepare(
@@ -217,22 +318,29 @@ $targetListStmt = $pdo->prepare(
 // カード内バッジ
 // =============================================
 $BADGE_DEFS = [
-    ["key" => "systemic",
-    "label" => "浸透移行性",
-    "class" => "badge_systemic"],
+    [
+        "key" => "systemic",
+        "label" => "浸透移行性",
+        "class" => "badge_systemic"
+    ],
 
-    ["key" => "translaminar",
-    "label" => "浸達性",
-    "class" => "badge_translaminar"],
+    [
+        "key" => "translaminar",
+        "label" => "浸達性",
+        "class" => "badge_translaminar"
+    ],
 
-    ["key" => "quickly",
-    "label" => "速効性",
-    "class" => "badge_quickly",
-    "min" => "4"], //速効性４以上を指定する
+    [
+        "key" => "quickly",
+        "label" => "速効性",
+        "class" => "badge_quickly",
+        "min" => "4"
+    ], //速効性４以上を指定する
 ];
 
 //0→表示なし、1→表示あり、min指定あるならmin以上表示
-function buildBadges(array $row, array $defs) : array {
+function buildBadges(array $row, array $defs): array
+{
     $out = [];
     foreach ($defs as $def) {
         $key = $def["key"];
@@ -249,17 +357,18 @@ function buildBadges(array $row, array $defs) : array {
             if (empty($row[$key])) {
                 continue;
             }
-        }   
-            $out[] = $def;
         }
-        return $out;
+        $out[] = $def;
+    }
+    return $out;
 }
 
 // =============================================
 // カケトコスコア
 // =============================================
 //登録年月日：~1990 =1, 1990~ =2, 2000~ =3, 2010~ =4, 2020~ =5,×6点 Max=30点
-function yearScore30($registeredOn): int {
+function yearScore30($registeredOn): int
+{
     if (empty($registeredOn)) return 6;
 
     $s = (string)$registeredOn;
@@ -274,7 +383,8 @@ function yearScore30($registeredOn): int {
 }
 
 //速効性：DBに入ってる数字×6点 Max=30点
-function quicklyScore30($quickly): int {
+function quicklyScore30($quickly): int
+{
     $q = (int)($quickly ?? 0);
     if ($q < 0) $q = 0;
     if ($q < 5) $q = 5;
@@ -282,7 +392,8 @@ function quicklyScore30($quickly): int {
 }
 
 //作物数：~30 =1, 30~ =2, 40~ =3, 50~ =4, 60~ =5,×4点 Max=20点
-function cropCountScore20($cropCount) : int {
+function cropCountScore20($cropCount): int
+{
     $n = (int)($cropCount ?? 0);
     if ($n >= 30) return 8;
     if ($n >= 40) return 12;
@@ -292,18 +403,21 @@ function cropCountScore20($cropCount) : int {
 }
 
 //浸透移行性：DBで0なら5点、１なら10点
-function systemicScore10($systemic) : int {
+function systemicScore10($systemic): int
+{
     return !empty($systemic) ? 10 : 5;
 }
 
 //病害虫数：DBから合計30未満なら5点、30以上なら10点
-function targetCountScore10($targetCount) : int {
+function targetCountScore10($targetCount): int
+{
     $n = (int)($targetCount ?? 0);
     return ($n >= 30) ? 10 : 5;
 }
 
 //カケトコスコア：全部の合計 Max=100点
-function kaketocoScore(array $p) : int {
+function kaketocoScore(array $p): int
+{
     $total =
         yearScore30($p["registered_on"] ?? null) +
         quicklyScore30($p["quickly"] ?? null) +
@@ -313,16 +427,11 @@ function kaketocoScore(array $p) : int {
     return $total;
 }
 
-// =============================================
-// ログイン・ログアウト処理
-// =============================================
-$isLoggedIn = !empty($_SESSION["user_id"]);
-$userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
-
 ?>
 
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -332,6 +441,7 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
     <!-- Select2 プルダウン内検索 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
+
 <body>
     <header class="app_header">
         <h1 class="app_title">
@@ -342,14 +452,14 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
         <?php if ($isLoggedIn): ?>
             <div class="header_user">
                 <span class="user_name">
-                    <?php htmlspecialchars($userName, ENT_QUOTES, "UTF-8") ?>さん
+                    <?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8") ?>さん
                 </span>
                 <a href="./logout.php" class="logout_btn">ログアウト</a>
             </div>
         <?php else: ?>
             <a href="./login.php" class="register_btn">ログイン</a>
         <?php endif; ?>
-        
+
         <div class="header_menu">
             <button type="button" id="menu_btn" class="menu_btn" aria-expanded="false" aria-controls="menu_panel">
                 <span class="menu_icon" aria-hidden="true"></span>
@@ -375,31 +485,31 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
             <form id="search_form" method="GET" action="">
                 <div class="form_row">
                     <label for="category">カテゴリ</label>
-                        <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
-                            <label class="cat_item">
-                                <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
-                                <span class="cat_btn">
-                                    <img src="./image/icon_butterfly.png" alt="">
-                                    <span class="cat_text">殺虫剤</span>
-                                </span>
-                            </label>
+                    <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
+                        <label class="cat_item">
+                            <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
+                            <span class="cat_btn">
+                                <img src="./image/icon_butterfly.png" alt="">
+                                <span class="cat_text">殺虫剤</span>
+                            </span>
+                        </label>
 
-                            <label class="cat_item">
-                                <input type="radio" name="category" value="殺菌剤" <?php echo ($category === "殺菌剤") ? "checked" : ""; ?>>
-                                <span class="cat_btn">
-                                    <img src="./image/icon_virus.png" alt="">
-                                    <span class="cat_text">殺菌剤</span>
-                                </span>
-                            </label>
+                        <label class="cat_item">
+                            <input type="radio" name="category" value="殺菌剤" <?php echo ($category === "殺菌剤") ? "checked" : ""; ?>>
+                            <span class="cat_btn">
+                                <img src="./image/icon_virus.png" alt="">
+                                <span class="cat_text">殺菌剤</span>
+                            </span>
+                        </label>
 
-                            <label class="cat_item">
-                                <input type="radio" name="category" value="除草剤" <?php echo ($category === "除草剤") ? "checked" : ""; ?>>
-                                <span class="cat_btn">
-                                    <img src="./image/icon_leaf.png" alt="">
-                                    <span class="cat_text">除草剤</span>
-                                </span>
-                            </label>
-                        </div>
+                        <label class="cat_item">
+                            <input type="radio" name="category" value="除草剤" <?php echo ($category === "除草剤") ? "checked" : ""; ?>>
+                            <span class="cat_btn">
+                                <img src="./image/icon_leaf.png" alt="">
+                                <span class="cat_text">除草剤</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form_row">
@@ -409,13 +519,13 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                         <option value="">指定なし</option>
                         <!-- 作物名プルダウン -->
                         <!-- カタカナ全角→半角処理 -->
-                        <?php foreach ($cropOptions as $label =>$dbValue): ?> 
+                        <?php foreach ($cropOptions as $label => $dbValue): ?>
                             <!-- <select>のプルダウンの中身<option>をHTMLで作っている -->
                             <!-- htmlspecialchars()は安全装置,記号とかをエスケープする -->
                             <option value="<?php echo htmlspecialchars($dbValue, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php 
+                                <?php
                                 // selectedがあると検索ボタン押しても選択状態になる
-                                echo($crop === $dbValue) ? "selected" : ""; ?>>
+                                echo ($crop === $dbValue) ? "selected" : ""; ?>>
                                 <!-- <option>トマト</option>のトマトの部分 -->
                                 <?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>
                             </option>
@@ -430,8 +540,7 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                         <!-- 病害虫プルダウン -->
                         <?php foreach ($targetOptions as $t): ?>
                             <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php echo($target === $t) ? "selected" : ""; ?>
-                            >
+                                <?php echo ($target === $t) ? "selected" : ""; ?>>
                                 <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
                             </option>
                         <?php endforeach; ?>
@@ -444,10 +553,9 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                     <div class="method_picker" role="radiogroup" aria-label="使用方法">
                         <?php foreach ($methodLabels as $m): ?>
                             <label class="method_item">
-                                <input type="radio" name="method" 
+                                <input type="radio" name="method"
                                     value="<?php echo htmlspecialchars($m, ENT_QUOTES, "UTF-8"); ?>"
-                                    <?php echo ($method === $m) ? "checked" : ""; ?>
-                                >
+                                    <?php echo ($method === $m) ? "checked" : ""; ?>>
                                 <span class="method_btn">
                                     <?php echo htmlspecialchars($m, ENT_QUOTES, "UTF-8"); ?>
                                 </span>
@@ -460,16 +568,16 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                     <button type="submit" id="search_btn">検索</button>
                     <button type="button" id="reset_btn">リセット</button>
                 </div>
-                
+
                 <!-- ソートと繋ぐ役割 -->
-                <input type="hidden" name="sort" id="sort_hidden" 
-                    value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8")?>">
+                <input type="hidden" name="sort" id="sort_hidden"
+                    value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8") ?>">
 
             </form>
         </section>
 
         <section class="result_section">
-            
+
             <div class="result_header">
                 <div class="result_left">
                     <h2>検索結果</h2>
@@ -480,8 +588,8 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                 <div class="result_right">
                     <label for="sort" class="sort_label"></label>
                     <select name="sort" id="sort">
-                        <option value="score_desc" <?php echo ($sort ==="score_desc") ? "selected" : ""; ?>>カケトコスコア順</option>
-                        <option value="name_asc" <?php echo ($sort === "name_asc") ? "selected" : "";?>>名前順</option>
+                        <option value="score_desc" <?php echo ($sort === "score_desc") ? "selected" : ""; ?>>カケトコスコア順</option>
+                        <option value="name_asc" <?php echo ($sort === "name_asc") ? "selected" : ""; ?>>名前順</option>
                         <option value="year_desc" <?php echo ($sort === "year_desc") ? "selected" : ""; ?>>登録が新しい順</option>
                     </select>
                 </div>
@@ -492,42 +600,66 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                 <?php if ($count === 0): ?>
                     <p>該当する農薬がありません。</p>
                 <?php else: ?>
-                    <?php foreach ($filtered as $i =>$p): ?>
-                        <?php 
-                            $pid = (string)($p["shopify_id"] ?? "");
-                            $boxId = "buy-" . $i;
-                            $reg = (string)($p["registration_number"] ?? "");
-                            //カード内 作物・病害虫一覧
-                            $cropListStmt->execute([":reg" => $reg, ":category" => $category]);
-                            $cropList = $cropListStmt->fetchAll(PDO::FETCH_COLUMN);
-                            $targetListStmt->execute([":reg" => $reg, ":category" => $category]);
-                            $targetList = $targetListStmt->fetchAll(PDO::FETCH_COLUMN);
-                            //カード内バッジ 浸透移行性、浸達性、速効性
-                            $badges = buildBadges($p, $BADGE_DEFS);
+                    <?php foreach ($filtered as $i => $p): ?>
+                        <?php
+                        $pid = (string)($p["shopify_id"] ?? "");
+                        $boxId = "buy-" . $i;
+                        $reg = (string)($p["registration_number"] ?? "");
+                        //カード内 作物・病害虫一覧
+                        $cropListStmt->execute([":reg" => $reg, ":category" => $category]);
+                        $cropList = $cropListStmt->fetchAll(PDO::FETCH_COLUMN);
+                        $targetListStmt->execute([":reg" => $reg, ":category" => $category]);
+                        $targetList = $targetListStmt->fetchAll(PDO::FETCH_COLUMN);
+                        //カード内バッジ 浸透移行性、浸達性、速効性
+                        $badges = buildBadges($p, $BADGE_DEFS);
                         ?>
-                            
-                        <article class="result_card">
-                            <!-- 商品名 -->
+
+                        <article class="result_card fav_card">
                             <div class="card_title">
+                                <!-- 商品名 -->
                                 <span class="card_title_name">
                                     <?php echo htmlspecialchars(
-                                        mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"), ENT_QUOTES, "UTF-8"); ?>
+                                        mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"),
+                                        ENT_QUOTES,
+                                        "UTF-8"
+                                    ); ?>
                                 </span>
+
                                 <!-- RACコード -->
-                                <?php if (!empty($p["rac_code"])): ?>
-                                    <span class="rac_code">
-                                        RAC:<?php echo htmlspecialchars($p["rac_code"], ENT_QUOTES, "UTF-8"); ?>
-                                    </span>
-                                <?php endif; ?>
+                                <div class="card_title_right">
+                                    <?php if (!empty($p["rac_code"])): ?>
+                                        <span class="rac_code">
+                                            RAC:<?php echo htmlspecialchars($p["rac_code"], ENT_QUOTES, "UTF-8"); ?>
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <!-- お気に入りハート -->
+                                    <?php
+                                        $regInt = (int)$reg;
+                                        $isFav = !empty($favMap[$regInt]);
+                                    ?>
+                                    <button
+                                        type="button"
+                                        class="fav_btn <?php echo $isFav ? 'is-on' : ''; ?>"
+                                        aria-pressed="<?php echo $isFav ? 'true' : 'false'; ?>"
+                                        data-reg="<?php echo (int)$regInt; ?>"
+                                        title="お気に入り">
+                                        <span class="fav_icon" aria-hidden="true">♡</span>
+                                        <span class="sr_only">お気に入り</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="card_mid">
                                 <!-- 商品画像 -->
                                 <div class="card_left">
-                                    <div 
-                                        class="shopify_img shopify_cell" 
+                                    <div
+                                        class="shopify_img shopify_cell"
                                         data-product-id="<?php echo htmlspecialchars(
-                                            (string)($p["shopify_id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>">
+                                                                (string)($p["shopify_id"] ?? ""),
+                                                                ENT_QUOTES,
+                                                                "UTF-8"
+                                                            ); ?>">
                                     </div>
                                 </div>
 
@@ -536,8 +668,8 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                                         <span class="spec_label">希釈倍率</span>
                                         <span class="spec_val">
                                             <?php
-                                                echo isset($p["magnification"])
-                                                    ? htmlspecialchars((string)$p["magnification"], ENT_QUOTES, "UTF-8") : "";
+                                            echo isset($p["magnification"])
+                                                ? htmlspecialchars((string)$p["magnification"], ENT_QUOTES, "UTF-8") : "";
                                             ?>
                                         </span>
                                     </div>
@@ -546,8 +678,8 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                                         <span class="spec_label">使用回数</span>
                                         <span class="spec_val">
                                             <?php
-                                                echo isset($p["times"])
-                                                    ? htmlspecialchars((string)$p["times"], ENT_QUOTES, "UTF-8") : ""; 
+                                            echo isset($p["times"])
+                                                ? htmlspecialchars((string)$p["times"], ENT_QUOTES, "UTF-8") : "";
                                             ?>
                                         </span>
                                     </div>
@@ -556,8 +688,8 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                                         <span class="spec_label">収穫前日数</span>
                                         <span class="spec_val">
                                             <?php
-                                                echo isset($p["timing"])
-                                                    ? htmlspecialchars((string)$p["timing"], ENT_QUOTES, "UTF-8") : "";
+                                            echo isset($p["timing"])
+                                                ? htmlspecialchars((string)$p["timing"], ENT_QUOTES, "UTF-8") : "";
                                             ?>
                                         </span>
                                     </div>
@@ -565,7 +697,7 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                                     <div class="spec_row">
                                         <span class="spec_label">使用方法</span>
                                         <span class="spec_val">
-                                            <?php echo htmlspecialchars((string)$p["method"] ?? "", ENT_QUOTES, "UTF-8");?>
+                                            <?php echo htmlspecialchars((string)$p["method"] ?? "", ENT_QUOTES, "UTF-8"); ?>
                                         </span>
                                     </div>
 
@@ -594,7 +726,7 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                                 <details class="card_detail">
                                     <summary>登録作物(<?php echo count($cropList); ?>)</summary>
                                     <div class="detail_body">
-                                        <?php if (count($cropList) ===0): ?>
+                                        <?php if (count($cropList) === 0): ?>
                                             <p>なし</p>
                                         <?php else: ?>
                                             <ul>
@@ -609,7 +741,7 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
                                 <details class="card_detail">
                                     <summary>適用病害虫(<?php echo count($targetList); ?>)</summary>
                                     <div class="detail_body">
-                                        <?php if (count($targetList) ===0): ?>
+                                        <?php if (count($targetList) === 0): ?>
                                             <p>なし</p>
                                         <?php else: ?>
                                             <ul>
@@ -634,7 +766,7 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
         </section>
     </main>
 
-    
+
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <!-- Select2 プルダウン内検索 -->
@@ -642,4 +774,5 @@ $userName = $isLoggedIn ? (string)($_SESSION["user_name"] ?? ""): "";
     <script src="./js/shopify.js"></script>
     <script src="./js/app.js"></script>
 </body>
+
 </html>
