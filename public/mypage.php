@@ -76,16 +76,16 @@ $userEmail = (string)($user["email"] ?? "");
                 </ul>
             </nav>
 
-            <div class="mypage_content">
-                <h2>基本情報</h2>
-                <h3>基本情報の変更</h3>
+            <div class="mypage_content mypage_panel">
+                <h2 class="mypage_title">基本情報</h2>
+                <h3 class="mypage_subtitle">基本情報の変更</h3>
 
                 <?php if (($_GET["updated"] ?? "") === "1"): ?>
-                    <p>更新しました。</p>
+                    <p class="mypage_message is_success">更新しました。</p>
                 <?php endif; ?>
 
                 <?php if (($_GET["error"] ?? "") !== ""): ?>
-                    <p>
+                    <p class="mypage_message is_error">
                         <?php
                         $err = (string)($_GET["error"] ?? "");
                         if ($err === "empty") echo "未入力の項目があります。";
@@ -95,20 +95,20 @@ $userEmail = (string)($user["email"] ?? "");
                     </p>
                 <?php endif; ?>
 
-                <form action="./mypage_update.php" method="POST">
-                    <div>
+                <form action="./mypage_update.php" method="POST" class="mypage_form" >
+                    <div class="mypage_field">
                         <label for="name">ユーザー名</label>
                         <input type="text" id="name" name="name"
                             value="<?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?>">
                     </div>
 
-                    <div>
+                    <div class="mypage_field">
                         <label for="email">メールアドレス</label>
                         <input type="text" id="email" name="email" 
                             value="<?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?>">
                     </div>
 
-                    <button type="submit">更新する</button>
+                    <button type="submit" class="mypage_submit">更新する</button>
                 </form>
             </div>
         </section>
