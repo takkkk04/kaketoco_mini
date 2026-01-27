@@ -17,8 +17,8 @@ if ($userId === null) {
 
 try {
     $stmt = $pdo->prepare("SELECT id, name, email FROM users WHERE id = :id LIMIT 1");
-    $stmt -> execute([":id" => $userId]);
-    $user = $stmt -> fetch(PDO::FETCH_ASSOC);
+    $stmt->execute([":id" => $userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$user) {
         header("Location: ./logout.php");
@@ -35,6 +35,7 @@ $userEmail = (string)($user["email"] ?? "");
 
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,6 +44,7 @@ $userEmail = (string)($user["email"] ?? "");
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/mypage.css">
 </head>
+
 <body>
     <header class="app_header">
         <h1 class="app_title">
@@ -76,16 +78,44 @@ $userEmail = (string)($user["email"] ?? "");
 
             <div class="mypage_content">
                 <h2>基本情報</h2>
+                <h3>基本情報の変更</h3>
 
-                <div>
-                    <p>ユーザー名 <?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?></p>
-                    <p>メールアドレス <?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?></p>
-                </div>
-            </div>            
+                <?php if (($_GET["updated"] ?? "") === "1"): ?>
+                    <p>更新しました。</p>
+                <?php endif; ?>
+
+                <?php if (($_GET["error"] ?? "") !== ""): ?>
+                    <p>
+                        <?php
+                        $err = (string)($_GET["error"] ?? "");
+                        if ($err === "empty") echo "未入力の項目があります。";
+                        elseif ($err === "email_taken") echo "そのメールアドレスはすでに使われています。";
+                        else echo "更新に失敗しました。";
+                        ?>
+                    </p>
+                <?php endif; ?>
+
+                <form action="./mypage_update.php" method="POST">
+                    <div>
+                        <label for="name">ユーザー名</label>
+                        <input type="text" id="name" name="name"
+                            value="<?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?>">
+                    </div>
+
+                    <div>
+                        <label for="email">メールアドレス</label>
+                        <input type="text" id="email" name="email" 
+                            value="<?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?>">
+                    </div>
+
+                    <button type="submit">更新する</button>
+                </form>
+            </div>
         </section>
     </main>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="./js/app.js"></script>
 </body>
+
 </html>
