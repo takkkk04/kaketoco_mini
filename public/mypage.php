@@ -4,10 +4,33 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 require_once __DIR__ . "/../src/backend/auth.php";
+require_once __DIR__ . "/../src/backend/db.php";
 
 requireLogin("./login.php");
 
-$userName = currentUserName();
+$userId = currentUserId();
+
+if ($userId === null) {
+    header("Location: ./login.php");
+    exit();
+}
+
+try {
+    $stmt = $pdo->prepare("SELECT id, name, email FROM users WHERE id = :id LIMIT 1");
+    $stmt -> execute([":id" => $userId]);
+    $user = $stmt -> fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        header("Location: ./logout.php");
+        exit();
+    }
+} catch (PDOException $e) {
+    die("DBエラー: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, "UTF-8"));
+}
+
+$userName = (string)($user["name"] ?? "");
+$userEmail = (string)($user["email"] ?? "");
+
 ?>
 
 <!DOCTYPE html>
@@ -53,7 +76,11 @@ $userName = currentUserName();
 
             <div class="mypage_content">
                 <h2>基本情報</h2>
-                <p><?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?> さん</p>
+
+                <div>
+                    <p>ユーザー名 <?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?></p>
+                    <p>メールアドレス <?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?></p>
+                </div>
             </div>            
         </section>
     </main>

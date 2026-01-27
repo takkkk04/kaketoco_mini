@@ -10,14 +10,26 @@ function isLoggedIn(): bool {
     return !empty($_SESSION["user_id"]);
 }
 
-function requireLogin(string $redirectTo = "/public/login.php"): void {
+function requireLogin(string $redirectTo = "./login.php"): void {
     if (!isLoggedIn()) {
         header("Location: " . $redirectTo);
         exit();
     }
 }
 
+function currentUserId(): ?int {
+    ensureSessionStarted();
+    return isset($_SESSION["user_id"])
+        ? (int)$_SESSION["user_id"]
+        : null;
+}
+
 function currentUserName(): string {
     ensureSessionStarted();
     return(string)($_SESSION["user_name"] ?? "");
+}
+
+function currentUserEmail(): string {
+    ensureSessionStarted();
+    return(string)($_SESSION["user_email"] ?? "");
 }
