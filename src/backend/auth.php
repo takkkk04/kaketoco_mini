@@ -19,9 +19,7 @@ function requireLogin(string $redirectTo = "./login.php"): void {
 
 function currentUserId(): ?int {
     ensureSessionStarted();
-    return isset($_SESSION["user_id"])
-        ? (int)$_SESSION["user_id"]
-        : null;
+    return isset($_SESSION["user_id"]) ? (int)$_SESSION["user_id"] : null;
 }
 
 function currentUserName(): string {
