@@ -95,20 +95,28 @@ $userEmail = (string)($user["email"] ?? "");
                     </p>
                 <?php endif; ?>
 
-                <form action="./mypage_update.php" method="POST" class="mypage_form" >
+                <form action="./mypage_update.php" method="POST" class="mypage_form" id="profile_form">
                     <div class="mypage_field">
                         <label for="name">ユーザー名</label>
                         <input type="text" id="name" name="name"
-                            value="<?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?>">
+                            value="<?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?>"
+                            disabled
+                            data-initial="<?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8"); ?>">
                     </div>
 
                     <div class="mypage_field">
                         <label for="email">メールアドレス</label>
                         <input type="text" id="email" name="email" 
-                            value="<?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?>">
+                            value="<?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?>"
+                            disabled
+                            data-initial="<?= htmlspecialchars($userEmail, ENT_QUOTES, "UTF-8"); ?>">
                     </div>
 
-                    <button type="submit" class="mypage_submit">更新する</button>
+                    <div class="mypage_actions">
+                        <button type="button" class="mypage_btn" id="edit_btn">変更する</button>
+                        <button type="submit" class="mypage_submit" id="save_btn" hidden>更新する</button>
+                        <button type="button" class="mypage_btn is_ghost" id="cancel_btn" hidden>キャンセル</button>
+                    </div>                   
                 </form>
             </div>
         </section>
@@ -116,6 +124,7 @@ $userEmail = (string)($user["email"] ?? "");
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="./js/app.js"></script>
+    <script src="./js/mypage.js"></script>
 </body>
 
 </html>
