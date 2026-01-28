@@ -521,6 +521,13 @@ select option {
     text-overflow: ellipsis;
 }
 
+.card_title_right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .rac_code {
     display: inline-block;
     padding: 4px 10px;
@@ -532,6 +539,50 @@ select option {
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;
+}
+
+/* お気に入りハートボタン
+------------------------------- */
+.fav_btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+
+    border: 1px solid #d7e6f7;
+    background: #fff;
+
+    display: grid;
+    place-items: center;
+
+    cursor: pointer;
+    padding: 0;
+}
+
+.fav_icon {
+    font-size: 18px;
+    line-height: 1;
+    color: #a0a8b0;
+    /* 未お気に入り：グレー */
+}
+
+/* お気に入りON */
+.fav_btn.is-on {
+    border-color: #ffb3c7;
+    background: #fff0f5;
+}
+
+.fav_btn.is-on .fav_icon {
+    color: #ff4d85;
+    /* ピンク */
+}
+
+/* ホバー */
+.fav_btn:hover {
+    filter: brightness(0.98);
+}
+
+.fav_btn:active {
+    transform: translateY(1px);
 }
 
 /* カード左側ー商品画像
