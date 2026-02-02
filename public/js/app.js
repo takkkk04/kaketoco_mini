@@ -97,3 +97,13 @@ $(function () {
         }
     });
 });
+
+// =============================================
+// お気に入りハートボタンクリックで色切り替える処理
+// =============================================
+$(function () {
+    $(document).on("click", ".fav_btn", function() {
+        const on = $(this).toggleClass("is-on").hasClass("is-on");
+        $(this).attr("aria-pressed", isOn ? "true" : "false");
+    });
+});
