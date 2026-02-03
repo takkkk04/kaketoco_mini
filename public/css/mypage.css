@@ -37,6 +37,21 @@
     color: #ffffff;
 }
 
+/* 左メニュー：リンク化 */
+.mypage_menu a{
+  display:block;
+  color:#234;
+  text-decoration:none;
+  padding:10px 12px;
+  border-radius:10px;
+}
+.mypage_menu li{ padding:0; } /* 既存の padding を a 側に寄せる */
+.mypage_menu li:hover a{ background:#e6f2ff; }
+.mypage_menu li.active a{
+  background:#1f6feb;
+  color:#fff;
+}
+
 /* =========================
 マイページ 右パネル
 ========================= */
@@ -171,3 +186,59 @@
 }
 
 [hidden] { display: none !important; }
+
+/* お気に入り一覧 */
+.fav_list{
+  display:grid;
+  gap:12px;
+  margin-top:12px;
+  max-width:720px;
+}
+.fav_item{
+  border:1px solid #d7e6f7;
+  border-radius:12px;
+  padding:12px;
+  background:#fff;
+}
+.fav_item_head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.fav_item_name{
+  font-weight:800;
+}
+.fav_reg{
+  display:inline-block;
+  margin-left:8px;
+  font-size:12px;
+  color:#607080;
+}
+
+/* fav_btn（SVG版） */
+.fav_btn{
+  width:32px;
+  height:32px;
+  border:none;
+  background:none;
+  padding:0;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+}
+.fav_svg{
+  width:22px;
+  height:22px;
+  fill:transparent;
+  stroke:#a0a8b0;
+  stroke-width:2;
+  transition: fill .15s ease, stroke .15s ease, transform .15s ease;
+}
+.fav_btn.is-on .fav_svg{
+  fill:#ff4d85;
+  stroke:#ff4d85;
+}
+.fav_btn:active .fav_svg{
+  transform: translateY(1px);
+}

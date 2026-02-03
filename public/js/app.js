@@ -130,6 +130,9 @@ $(function () {
             }
 
             $btn.toggleClass("is-on", !!data.fav);
+                if (!data.fav && $btn.data("remove-on-off")) {
+                    $btn.closest(".fav_item").remove();
+                }
             $btn.attr("aria-pressed", data.fav ? "true" : "false");
         }
         catch (e) {
