@@ -59,7 +59,7 @@ $(function () {
         width: '100%',
         placeholder: '指定なし',
         allowClear: true,
-        matcher: function(params, data) {
+        matcher: function (params, data) {
             if ($.trim(params.term) === "") {
                 return data;
             }
@@ -79,8 +79,8 @@ $(function () {
 // =============================================
 // ソート変更したら即時並び替える処理
 // =============================================
-$(function() {
-    $("#sort").on("change", function() {
+$(function () {
+    $("#sort").on("change", function () {
         $("#sort_hidden").val(this.value);
         $("#search_form").submit();
     });
@@ -99,11 +99,45 @@ $(function () {
 });
 
 // =============================================
-// お気に入りハートボタンクリックで色切り替える処理
+// お気に入りハートボタンクリック処理(POST、色切り替え)
 // =============================================
 $(function () {
-    $(document).on("click", ".fav_btn", function() {
-        const on = $(this).toggleClass("is-on").hasClass("is-on");
-        $(this).attr("aria-pressed", isOn ? "true" : "false");
+    $(document).on("click", ".fav_btn", async function () {
+        const $btn = $(this);
+        const reg = $btn.data("reg");
+
+        //連打防止
+        if ($btn.data("busy")) return;
+        $btn.data("busy", true);
+
+        try {
+            const res = await fetch("./favorite_toggle.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+                body: new URLSearchParams({ reg: String(reg) }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.ok) {
+                if (data.error === "not_logged_in") {
+                    console.log("toggle error:", res.status, data);
+                    window.location.href = "./login.php";
+                    return;
+                }
+                alert("エラー:" + (data.error ?? "unknown"));
+                return;
+            }
+
+            $btn.toggleClass("is-on", !!data.fav);
+            $btn.attr("aria-pressed", data.fav ? "true" : "false");
+        }
+        catch (e) {
+            console.error(e);
+            alert("通信に失敗しました。");
+        }
+        finally {
+            $btn.data("busy", false);
+        }
     });
 });
