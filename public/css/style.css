@@ -543,45 +543,49 @@ select option {
 
 /* お気に入りハートボタン
 ------------------------------- */
+/* お気に入りハートボタン */
 .fav_btn {
     width: 32px;
     height: 32px;
-    border-radius: 999px;
-
-    border: 1px solid #d7e6f7;
-    background: #fff;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
 
     display: grid;
     place-items: center;
-
-    cursor: pointer;
-    padding: 0;
 }
 
+/* SVGアイコン */
 .fav_icon {
-    font-size: 18px;
-    line-height: 1;
-    color: #a0a8b0;
-    /* 未お気に入り：グレー */
+    width: 20px;
+    height: 20px;
+
+    /* OFF：中身は透明、枠だけグレー */
+    fill: transparent;
+    stroke: #a0a8b0;
+    stroke-width: 2;
+
+    transition: fill 0.15s ease, stroke 0.15s ease, transform 0.15s ease;
 }
 
-/* お気に入りON */
-.fav_btn.is-on {
-    border-color: #ffb3c7;
-    background: #fff0f5;
-}
-
+/* ON：中がピンク */
 .fav_btn.is-on .fav_icon {
-    color: #ff4d85;
-    /* ピンク */
+    fill: #ff4d85;
+    stroke: #ff4d85;
 }
 
-/* ホバー */
-.fav_btn:hover {
-    filter: brightness(0.98);
+/* hover/active */
+.fav_btn:hover .fav_icon {
+    stroke: #6b7280;
 }
 
-.fav_btn:active {
+.fav_btn.is-on:hover .fav_icon {
+    fill: #ff2f73;
+    stroke: #ff2f73;
+}
+
+.fav_btn:active .fav_icon {
     transform: translateY(1px);
 }
 
