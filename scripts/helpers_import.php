@@ -42,29 +42,19 @@ function openCsv(string $path, string $sourceEncoding = "UTF-8")
         throw new RuntimeException("CSVを開けませんでした: {$path}");
     }
 
-    if (strtoupper($sourceEncoding) !== "UTF-8") {
-        $filter = @stream_filter_append(
-            $handle,
-            "convert.iconv.{$sourceEncoding}/UTF-8",
-            STREAM_FILTER_READ
-        );
-
-        if ($filter === false) {
-            fclose($handle);
-            throw new RuntimeException("文字コード変換フィルタを適用できませんでした: {$sourceEncoding}");
-        }
-    }
-
     return $handle;
 }
 
-function readCsvRow($handle): array|false
+function readCsvRow($handle, string $sourceEncoding = "UTF-8"): array|false
 {
-    $row = fgetcsv($handle);
+    $line = fgets($handle);
 
-    if ($row === false) {
+    if ($line === false) {
         return false;
     }
+
+    $line = mb_convert_encoding($line, "UTF-8", $sourceEncoding);
+    $row = str_getcsv($line);
 
     if ($row === [null]) {
         return [];
