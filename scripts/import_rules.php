@@ -8,7 +8,7 @@ require_once __DIR__ . "/helpers_import.php";
 assertCli();
 
 const RULES_DEFAULT_CSV_PATH = __DIR__ . "/../data/rules.csv";
-const RULES_SOURCE_ENCODING = "UTF-8";
+const RULES_SOURCE_ENCODING = "SJIS-win";
 
 const RULES_REQUIRED_HEADERS = [
     "登録番号",
@@ -172,14 +172,19 @@ function upsertMethod(PDO $pdo, string $name): ?int
         return null;
     }
 
+    $nameHash = md5($name);
+
     $stmt = $pdo->prepare(
-        "INSERT INTO methods (name, created_at, updated_at)
-         VALUES (:name, NOW(), NOW())
+        "INSERT INTO methods (name, name_hash, created_at, updated_at)
+         VALUES (:name, :name_hash, NOW(), NOW())
          ON DUPLICATE KEY UPDATE
             id = LAST_INSERT_ID(id),
             updated_at = NOW()"
     );
-    $stmt->execute([":name" => $name]);
+    $stmt->execute([
+        ":name" => $name,
+        ":name_hash" => $nameHash,
+    ]);
 
     return (int)$pdo->lastInsertId();
 }

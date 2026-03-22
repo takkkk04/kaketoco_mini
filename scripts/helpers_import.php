@@ -34,7 +34,7 @@ function resolveCsvPath(array $argv, int $index = 1): string
     return $path;
 }
 
-function openCsv(string $path, string $sourceEncoding = "UTF-8")
+function openCsv(string $path, string $sourceEncoding = "SJIS-win")
 {
     $handle = fopen($path, "r");
 
@@ -45,7 +45,7 @@ function openCsv(string $path, string $sourceEncoding = "UTF-8")
     return $handle;
 }
 
-function readCsvRow($handle, string $sourceEncoding = "UTF-8"): array|false
+function readCsvRow($handle, string $sourceEncoding = "SJIS-win"): array|false
 {
     $line = fgets($handle);
 

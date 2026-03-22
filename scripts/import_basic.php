@@ -9,7 +9,7 @@ assertCli();
 
 const BASIC_DEFAULT_CSV_PATH = __DIR__ . "/../data/basic.csv";
 // 農水省CSVは現状 SJIS-win 前提で読み込む
-const BASIC_SOURCE_ENCODING = "UTF-8";
+const BASIC_SOURCE_ENCODING = "SJIS-win";
 
 const BASIC_REQUIRED_HEADERS = [
     "登録番号",
