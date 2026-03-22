@@ -54,7 +54,7 @@ function readCsvRow($handle, string $sourceEncoding = "UTF-8"): array|false
     }
 
     $line = mb_convert_encoding($line, "UTF-8", $sourceEncoding);
-    $row = str_getcsv($line);
+    $row = str_getcsv($line, ",", '"', "\\");
 
     if ($row === [null]) {
         return [];
@@ -79,6 +79,17 @@ function normalizeNullableString(?string $value): ?string
 {
     $value = normalizeImportString($value);
     return $value === "" ? null : $value;
+}
+
+function normalizeNullableInt(?string $value): ?int
+{
+    $value = normalizeImportString($value);
+
+    if ($value === "") {
+        return null;
+    }
+
+    return (int)$value;
 }
 
 function findOrCreateDictionaryId(
