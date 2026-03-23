@@ -157,16 +157,16 @@ $BADGE_DEFS = [
                 </div>
 
                 <div class="form_row">
-                    <!-- 使用方法ラジオボタン、デフォルトは"散布" -->
+                    <!-- 使用方法ラジオボタン -->
                     <label for="method">使用方法</label>
                     <div class="method_picker" role="radiogroup" aria-label="使用方法">
                         <?php foreach ($methodLabels as $m): ?>
                             <label class="method_item">
                                 <input type="radio" name="method"
-                                    value="<?php echo htmlspecialchars($m, ENT_QUOTES, "UTF-8"); ?>"
-                                    <?php echo ($method === $m) ? "checked" : ""; ?>>
+                                    value="<?php echo htmlspecialchars((string)$m["value"], ENT_QUOTES, "UTF-8"); ?>"
+                                    <?php echo ($method === (string)$m["value"]) ? "checked" : ""; ?>>
                                 <span class="method_btn">
-                                    <?php echo htmlspecialchars($m, ENT_QUOTES, "UTF-8"); ?>
+                                    <?php echo htmlspecialchars((string)$m["label"], ENT_QUOTES, "UTF-8"); ?>
                                 </span>
                             </label>
                         <?php endforeach; ?>

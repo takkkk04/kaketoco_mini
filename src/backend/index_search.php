@@ -8,7 +8,7 @@
 $category = $_GET["category"] ?? "殺虫剤";
 $crop = trim($_GET["crop"] ?? "");
 $target = trim($_GET["target"] ?? "");
-$method = trim($_GET["method"] ?? "散布");
+$method = trim($_GET["method"] ?? "");
 $methodGroups = [
     "散布" => ["散布"],
     "全面土壌散布" => ["全面土壌散布"],
@@ -27,21 +27,30 @@ $methodGroups = [
         "添加"
     ]
 ];
-$methodLabels = ["散布", "灌注", "ドローン散布"];
+$methodLabels = [
+    ["value" => "", "label" => "指定なし"],
+    ["value" => "散布", "label" => "散布"],
+    ["value" => "灌注", "label" => "灌注"],
+    ["value" => "ドローン散布", "label" => "ドローン散布"],
+];
 $sort = $_GET["sort"] ?? "score_desc";
 
 // =============================================
 // 作物・病害虫・使用方法絞り込み処理
 // =============================================
-$selectedMethods = $methodGroups[$method] ?? [$method];
-$in = [];
+$methodWhereSql = "";
 $methodParams = [];
-foreach ($selectedMethods as $i => $m) {
-    $key = ":m{$i}";
-    $in[] = $key;
-    $methodParams[$key] = $m;
+if ($method !== "") {
+    $selectedMethods = $methodGroups[$method] ?? [$method];
+    $in = [];
+    foreach ($selectedMethods as $i => $m) {
+        $key = ":m{$i}";
+        $in[] = $key;
+        $methodParams[$key] = $m;
+    }
+    $methodInSql = implode(",", $in);
+    $methodWhereSql = " AND mf.name IN ($methodInSql)";
 }
-$methodInSql = implode(",", $in);
 
 // =============================================
 // DBから情報取ってくるSQLゾーン（新DB構造）
@@ -77,7 +86,7 @@ $sql =
             prf.category = :category_pick
             AND (:crop1 = '' OR cf.name = :crop2)
             AND (:target1 = '' OR tf.name = :target2)
-            AND mf.name IN ($methodInSql)
+            $methodWhereSql
         GROUP BY prf.pesticide_id
     ) AS picked
     JOIN pesticide_rules pr
