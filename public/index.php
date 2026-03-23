@@ -265,14 +265,20 @@ $BADGE_DEFS = [
                             <div class="card_mid">
                                 <!-- 商品画像 -->
                                 <div class="card_left">
-                                    <div
-                                        class="shopify_img shopify_cell"
-                                        data-product-id="<?php echo htmlspecialchars(
-                                                                (string)($p["shopify_id"] ?? ""),
-                                                                ENT_QUOTES,
-                                                                "UTF-8"
-                                                            ); ?>">
-                                    </div>
+                                    <?php if (!empty($p["shopify_id"])): ?>
+                                        <div
+                                            class="shopify_img shopify_cell"
+                                            data-product-id="<?php echo htmlspecialchars(
+                                                                    (string)($p["shopify_id"] ?? ""),
+                                                                    ENT_QUOTES,
+                                                                    "UTF-8"
+                                                                ); ?>">
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="shopify_img_placeholder">
+                                            <img src="./image/coming_soon.jpeg" alt="準備中">
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="card_specs">
