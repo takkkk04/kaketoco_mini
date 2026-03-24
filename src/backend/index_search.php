@@ -6,6 +6,7 @@
 // =============================================
 // +++++++++++++++++++++++++++++++++++++++++++++
 $category = $_GET["category"] ?? "殺虫剤";
+$keyword = trim($_GET["keyword"] ?? "");
 $crop = trim($_GET["crop"] ?? "");
 $target = trim($_GET["target"] ?? "");
 $method = trim($_GET["method"] ?? "");
@@ -119,6 +120,7 @@ $sql =
         WHERE
             prf.category = :category_pick
             AND p_main.hide_in_search = 0
+            AND (:keyword = '' OR p_main.name LIKE :keyword_like)
             AND (:crop1 = '' OR cf.name = :crop2)
             AND (:target1 = '' OR tf.name = :target2)
             $methodWhereSql
@@ -146,6 +148,8 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([
     ":category_pick" => $category,
     ":category_stats" => $category,
+    ":keyword" => $keyword,
+    ":keyword_like" => "%" . $keyword . "%",
     ":crop1" => $crop,
     ":crop2" => $crop,
     ":target1" => $target,

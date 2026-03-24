@@ -93,6 +93,16 @@ $BADGE_DEFS = [
 
             <form id="search_form" method="GET" action="">
                 <div class="form_row">
+                    <label for="keyword">農薬名</label>
+                    <input
+                        type="search"
+                        id="keyword"
+                        name="keyword"
+                        value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, "UTF-8"); ?>"
+                        placeholder="農薬名で検索">
+                </div>
+
+                <div class="form_row">
                     <label for="category">カテゴリ</label>
                     <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
                         <label class="cat_item">
