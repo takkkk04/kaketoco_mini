@@ -106,6 +106,14 @@ $BADGE_DEFS = [
                     <label for="category">カテゴリ</label>
                     <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
                         <label class="cat_item">
+                            <input type="radio" name="category" value="" <?php echo ($category === "") ? "checked" : ""; ?>>
+                            <span class="cat_btn">
+                                <img class="cat_icon_placeholder" src="./image/icon_butterfly.png" alt="" aria-hidden="true">
+                                <span class="cat_text">指定なし</span>
+                            </span>
+                        </label>
+
+                        <label class="cat_item">
                             <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
                             <span class="cat_btn">
                                 <img src="./image/icon_butterfly.png" alt="">
@@ -195,6 +203,7 @@ $BADGE_DEFS = [
             </form>
         </section>
 
+        <?php if ($hasSearchCondition): ?>
         <section class="result_section">
 
             <div class="result_header">
@@ -392,6 +401,7 @@ $BADGE_DEFS = [
             </div>
 
         </section>
+        <?php endif; ?>
     </main>
 
 

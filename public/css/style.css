@@ -194,7 +194,7 @@ body {
 ======================================== */
 .category_picker {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 
@@ -224,6 +224,10 @@ body {
     width: 26px;
     height: 26px;
     display: block;
+}
+
+.cat_btn .cat_icon_placeholder {
+    visibility: hidden;
 }
 
 .cat_text {
@@ -935,6 +939,9 @@ select option {
 レスポンシブ対応
 ======================================== */
 @media (max-width: 899px) {
+    .category_picker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
     #keyword,
     select,
