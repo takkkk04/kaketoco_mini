@@ -55,6 +55,38 @@ if ($method !== "") {
 // =============================================
 // DBから情報取ってくるSQLゾーン（新DB構造）
 // =============================================
+// =============================================
+// 検索SQLの設計意図
+// =============================================
+// 1. 検索結果は「適用ルール単位」ではなく「農薬1商品につき1カード」で出す。
+//    pesticide_rules は1農薬に対して複数行あるため、まず pesticide_id ごとに
+//    MIN(prf.id) を pick_id として代表1行だけ拾っている。
+//
+// 2. 一覧では OEM / 販売会社違いで同じ農薬が重複表示されやすいため、
+//    pesticides.hide_in_search = 0 のものだけを表示対象にしている。
+//    hide_in_search=1 は、事前バッチで「クミアイ○○」「協友○○」など
+//    メーカー接頭辞付きの重複候補に付与しており、検索時の負荷を軽くするため
+//    一覧表示時には重い名寄せ判定を毎回行わない設計にしている。
+//
+// 3. 作物・病害虫・使用方法の絞り込みは picked サブクエリ側で先に行う。
+//    これにより、候補集合を先に絞ってから代表行を決める形になり、
+//    「条件に合う農薬だけを1件ずつ出す」という一覧用途に合った動きになる。
+//
+// 4. crop_count / target_count はカード表示用の集計値。
+//    これは代表1行の内容ではなく、その農薬全体の登録作物数・対象数を見せたいので、
+//    category単位で別集計して LEFT JOIN している。
+//
+// 5. rac_code / quickly / systemic / translaminar は将来 pesticides 側の
+//    基本性能データと接続する想定。現時点では未実装のため NULL を返している。
+//    一覧UIを先に成立させるための暫定対応。
+//
+// 6. ORDER BY は最終表示前のベース順序として p.name ASC を入れている。
+//    実際の表示順はこのあと PHP 側で score / name / year の並び替えを行う。
+//
+// 注意:
+// - hide_in_search は「一覧で隠すためのフラグ」であり、DB上から削除はしない。
+// - 詳細ページでは将来的に OEM / メーカー違いも辿れるよう、元データは保持する。
+// - 名寄せはまだ第1段階で、完全一致ベースの安全側設計。今後さらに改善余地あり。
 $sql =
     "SELECT
         p.registration_number AS registration_number,
@@ -76,6 +108,8 @@ $sql =
             prf.pesticide_id,
             MIN(prf.id) AS pick_id
         FROM pesticide_rules prf
+        JOIN pesticides p_main
+            ON p_main.id = prf.pesticide_id
         LEFT JOIN crops cf
             ON cf.id = prf.crop_id
         LEFT JOIN targets tf
@@ -84,6 +118,7 @@ $sql =
             ON mf.id = prf.method_id
         WHERE
             prf.category = :category_pick
+            AND p_main.hide_in_search = 0
             AND (:crop1 = '' OR cf.name = :crop2)
             AND (:target1 = '' OR tf.name = :target2)
             $methodWhereSql

@@ -314,10 +314,96 @@ function printImportSummary(array $counts): void
     writeInfo("Skipped: " . (string)$counts["skipped"]);
 }
 
+function recalculateHideInSearch(PDO $pdo): int
+{
+    // =============================================
+    // hide_in_search 再計算（OEM表示制御）
+    // =============================================
+    // 検索結果カードに「頭にメーカー名がついた同一商品の名前違い」が多数あって邪魔なので検索結果から隠す処理
+    // hide_in_searchテーブル=1は検索結果から除外
+    // 1) まず全件を 0 に戻す
+    // 2) 接頭辞付きで、同カテゴリにベース名がある商品のみ 1 にする
+    // 3) データは削除せず、一覧表示の制御フラグだけ更新する
+    $prefixes = [
+        "クミアイ",
+        "協友",
+        "日農",
+        "日曹",
+        "日産",
+        "サンケイ",
+        "ホクコー",
+        "ホクサン",
+        "兼商",
+        "理研",
+        "石原",
+        "丸和",
+        "MIC",
+        "JA",
+        "FMC",
+        "ISK",
+        "BASF",
+        "OAT",
+        "UBE",
+        "HCC",
+        "HJ",
+        "JC",
+        "HUPL",
+        "NT",
+        "DAS",
+        "アグロス",
+    ];
+
+    $wlSelects = [];
+    $params = [];
+    foreach ($prefixes as $i => $prefix) {
+        $key = ":p{$i}";
+        $wlSelects[] = "SELECT {$key} AS prefix";
+        $params[$key] = $prefix;
+    }
+    $wlSql = implode(" UNION ALL ", $wlSelects);
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec("UPDATE pesticides SET hide_in_search = 0");
+
+        $sql = "
+            UPDATE pesticides p_main
+            JOIN (
+                SELECT p1.id
+                FROM pesticides p1
+                JOIN ({$wlSql}) wl
+                    ON LEFT(p1.name, CHAR_LENGTH(wl.prefix)) = wl.prefix
+                    AND CHAR_LENGTH(p1.name) > CHAR_LENGTH(wl.prefix)
+                JOIN pesticides p_base
+                    ON p_base.category = p1.category
+                    AND p_base.name = TRIM(SUBSTRING(p1.name, CHAR_LENGTH(wl.prefix) + 1))
+                    AND p_base.id <> p1.id
+                GROUP BY p1.id
+            ) flagged
+                ON flagged.id = p_main.id
+            SET p_main.hide_in_search = 1
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $updatedCount = (int)$stmt->rowCount();
+
+        $pdo->commit();
+        return $updatedCount;
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+}
+
 try {
     $csvPath = resolveBasicCsvPath($argv);
     writeInfo("Start import_basic: {$csvPath}");
     $counts = importBasicCsv($pdo, $csvPath);
+    $hideUpdated = recalculateHideInSearch($pdo);
+    writeInfo("HideInSearchUpdated: " . (string)$hideUpdated);
     printImportSummary($counts);
     writeInfo("Finished import_basic");
 } catch (Throwable $e) {
