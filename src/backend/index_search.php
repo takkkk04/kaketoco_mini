@@ -37,6 +37,71 @@ $methodLabels = [
 $sort = $_GET["sort"] ?? "score_desc";
 
 // =============================================
+// 農薬名キーワード（スペース=OR, +=AND, -=除外）
+// =============================================
+$normalizedKeyword = mb_convert_kana($keyword, "as", "UTF-8");
+$normalizedKeyword = str_replace("\u{3000}", " ", $normalizedKeyword);
+$normalizedKeyword = trim((string)preg_replace('/\s+/u', ' ', $normalizedKeyword));
+$keywordWhereSql = "";
+$keywordParams = [];
+if ($normalizedKeyword !== "") {
+    $spaceTokens = preg_split('/\s+/u', $normalizedKeyword, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $orBlocks = [];
+    foreach ($spaceTokens as $token) {
+        if ($token === "") {
+            continue;
+        }
+
+        // "-語" は直前ブロックにぶら下げて、AND NOT として扱う
+        if (strpos($token, "-") === 0 && !empty($orBlocks)) {
+            $orBlocks[count($orBlocks) - 1] .= "+" . $token;
+            continue;
+        }
+
+        $orBlocks[] = $token;
+    }
+
+    $orParts = [];
+    $kwIndex = 0;
+
+    foreach ($orBlocks as $block) {
+        $terms = preg_split('/\++/u', trim($block), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $blockParts = [];
+
+        foreach ($terms as $term) {
+            if ($term === "-") {
+                continue;
+            }
+
+            if (strpos($term, "-") === 0) {
+                $exclude = substr($term, 1);
+                if ($exclude === "") {
+                    continue;
+                }
+                $key = ":kw{$kwIndex}";
+                $kwIndex++;
+                $blockParts[] = "p_main.name NOT LIKE {$key}";
+                $keywordParams[$key] = "%" . $exclude . "%";
+                continue;
+            }
+
+            $key = ":kw{$kwIndex}";
+            $kwIndex++;
+            $blockParts[] = "p_main.name LIKE {$key}";
+            $keywordParams[$key] = "%" . $term . "%";
+        }
+
+        if (!empty($blockParts)) {
+            $orParts[] = "(" . implode(" AND ", $blockParts) . ")";
+        }
+    }
+
+    if (!empty($orParts)) {
+        $keywordWhereSql = " AND (" . implode(" OR ", $orParts) . ")";
+    }
+}
+
+// =============================================
 // 作物・病害虫・使用方法絞り込み処理
 // =============================================
 $methodWhereSql = "";
@@ -120,7 +185,7 @@ $sql =
         WHERE
             prf.category = :category_pick
             AND p_main.hide_in_search = 0
-            AND (:keyword = '' OR p_main.name LIKE :keyword_like)
+            $keywordWhereSql
             AND (:crop1 = '' OR cf.name = :crop2)
             AND (:target1 = '' OR tf.name = :target2)
             $methodWhereSql
@@ -148,13 +213,11 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([
     ":category_pick" => $category,
     ":category_stats" => $category,
-    ":keyword" => $keyword,
-    ":keyword_like" => "%" . $keyword . "%",
     ":crop1" => $crop,
     ":crop2" => $crop,
     ":target1" => $target,
     ":target2" => $target,
-] + $methodParams);
+] + $methodParams + $keywordParams);
 
 // =============================================
 // 並び替え（スコア順、名前順）
