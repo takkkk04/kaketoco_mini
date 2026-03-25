@@ -1,27 +1,15 @@
 <?php
-
+// =============================================
+// 詳細ページ
+// =============================================
 declare(strict_types=1);
 
-require_once __DIR__ . "/../src/backend/db.php";
+require_once __DIR__ . "/../src/backend/pesticide_detail_fetch.php";
 
-$id = (int)($_GET["id"] ?? 0);
-
-if ($id <= 0) {
-    http_response_code(400);
-    $errorMessage = "不正なIDです。";
-    $pesticide = null;
-} else {
-    $stmt = $pdo->prepare(
-        "SELECT id, name, registration_number
-         FROM pesticides
-         WHERE id = :id
-         LIMIT 1"
-    );
-    $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-    $stmt->execute();
-    $pesticide = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-    $errorMessage = $pesticide ? "" : "該当する農薬が見つかりません。";
-}
+$displayValue = static function ($value): string {
+    $text = trim((string)($value ?? ""));
+    return $text === "" ? "-" : $text;
+};
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -44,6 +32,36 @@ if ($id <= 0) {
             <?php else: ?>
                 <p>農薬名: <?php echo htmlspecialchars((string)$pesticide["name"], ENT_QUOTES, "UTF-8"); ?></p>
                 <p>登録番号: <?php echo htmlspecialchars((string)$pesticide["registration_number"], ENT_QUOTES, "UTF-8"); ?></p>
+
+                <h2>適用表</h2>
+                <?php if ($ruleRows === []): ?>
+                    <p>適用情報がありません。</p>
+                <?php else: ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>作物名</th>
+                                <th>適用病害虫雑草名</th>
+                                <th>希釈倍数使用量</th>
+                                <th>使用時期</th>
+                                <th>本剤の使用回数</th>
+                                <th>使用方法</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($ruleRows as $row): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($displayValue($row["crop_name"] ?? null), ENT_QUOTES, "UTF-8"); ?></td>
+                                    <td><?php echo htmlspecialchars($displayValue($row["target_name"] ?? null), ENT_QUOTES, "UTF-8"); ?></td>
+                                    <td><?php echo htmlspecialchars($displayValue($row["magnification_text"] ?? null), ENT_QUOTES, "UTF-8"); ?></td>
+                                    <td><?php echo htmlspecialchars($displayValue($row["timing_text"] ?? null), ENT_QUOTES, "UTF-8"); ?></td>
+                                    <td><?php echo htmlspecialchars($displayValue($row["times_text"] ?? null), ENT_QUOTES, "UTF-8"); ?></td>
+                                    <td><?php echo htmlspecialchars($displayValue($row["method_name"] ?? null), ENT_QUOTES, "UTF-8"); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
             <?php endif; ?>
 
             <p><a href="./index.php">一覧へ戻る</a></p>
