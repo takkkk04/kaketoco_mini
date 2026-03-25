@@ -409,6 +409,58 @@ $BADGE_DEFS = [
                 <?php endif; ?>
             </div>
 
+            <?php if (($totalPages ?? 0) > 1): ?>
+                <?php
+                $window = 2;
+                $currentPage = (int)$page;
+                $lastPage = (int)$totalPages;
+                $startPage = max(1, $currentPage - $window);
+                $endPage = min($lastPage, $currentPage + $window);
+                $buildPageUrl = static function (int $targetPage): string {
+                    $pageQuery = $_GET;
+                    $pageQuery["page"] = $targetPage;
+                    return "?" . http_build_query($pageQuery);
+                };
+                ?>
+                <nav class="pagination" aria-label="ページネーション">
+                    <?php if ($currentPage > 1): ?>
+                        <a class="page_link page_nav" href="<?php echo htmlspecialchars($buildPageUrl($currentPage - 1), ENT_QUOTES, "UTF-8"); ?>">前へ</a>
+                    <?php else: ?>
+                        <span class="page_link page_nav is_disabled">前へ</span>
+                    <?php endif; ?>
+
+                    <?php if ($startPage > 1): ?>
+                        <a class="page_link" href="<?php echo htmlspecialchars($buildPageUrl(1), ENT_QUOTES, "UTF-8"); ?>">1</a>
+                        <?php if ($startPage > 2): ?>
+                            <span class="page_ellipsis">...</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
+                        <a
+                            class="page_link <?php echo ($currentPage === $p) ? "active" : ""; ?>"
+                            href="<?php echo htmlspecialchars($buildPageUrl($p), ENT_QUOTES, "UTF-8"); ?>">
+                            <?php echo $p; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($endPage < $lastPage): ?>
+                        <?php if ($endPage < $lastPage - 1): ?>
+                            <span class="page_ellipsis">...</span>
+                        <?php endif; ?>
+                        <a class="page_link" href="<?php echo htmlspecialchars($buildPageUrl($lastPage), ENT_QUOTES, "UTF-8"); ?>">
+                            <?php echo $lastPage; ?>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if ($currentPage < $lastPage): ?>
+                        <a class="page_link page_nav" href="<?php echo htmlspecialchars($buildPageUrl($currentPage + 1), ENT_QUOTES, "UTF-8"); ?>">次へ</a>
+                    <?php else: ?>
+                        <span class="page_link page_nav is_disabled">次へ</span>
+                    <?php endif; ?>
+                </nav>
+            <?php endif; ?>
+
         </section>
         <?php endif; ?>
     </main>

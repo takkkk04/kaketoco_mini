@@ -162,22 +162,95 @@ if ($method !== "") {
 // - 名寄せはまだ第1段階で、完全一致ベースの安全側設計。今後さらに改善余地あり。
 $filtered = [];
 $count = 0;
+$perPage = 50;
+$page = max(1, (int)($_GET["page"] ?? 1));
+$totalPages = 0;
 
 if ($hasSearchCondition) {
-    $params = [
+    $pickedParams = [
         ":crop1" => $crop,
         ":crop2" => $crop,
         ":target1" => $target,
         ":target2" => $target,
     ];
+    $statsParams = [];
     $pickedCategoryWhereSql = "";
     $statsCategoryWhereSql = "";
     if ($category !== "") {
         $pickedCategoryWhereSql = " AND prf.category = :category_pick";
         $statsCategoryWhereSql = " AND category = :category_stats";
-        $params[":category_pick"] = $category;
-        $params[":category_stats"] = $category;
+        $pickedParams[":category_pick"] = $category;
+        $statsParams[":category_stats"] = $category;
     }
+
+// =============================================
+// 検索処理（条件組み立て + 総件数取得 + 20件ページネーション）
+// 条件あり時のみSQL実行し、COUNT(DISTINCT pesticide_id)で総件数を計算する
+// =============================================
+    $pickedFromWhereSql =
+        "FROM pesticide_rules prf
+        JOIN pesticides p_main
+            ON p_main.id = prf.pesticide_id
+        LEFT JOIN crops cf
+            ON cf.id = prf.crop_id
+        LEFT JOIN targets tf
+            ON tf.id = prf.target_id
+        LEFT JOIN methods mf
+            ON mf.id = prf.method_id
+        WHERE
+            p_main.hide_in_search = 0
+            $pickedCategoryWhereSql
+            $keywordWhereSql
+            AND (:crop1 = '' OR cf.name = :crop2)
+            AND (:target1 = '' OR tf.name = :target2)
+            $methodWhereSql";
+
+    $countParams = $pickedParams + $methodParams + $keywordParams;
+
+    $countSql =
+        "SELECT COUNT(DISTINCT picked.pesticide_id) AS total_count
+        FROM (
+            SELECT
+                prf.pesticide_id
+            $pickedFromWhereSql
+            GROUP BY prf.pesticide_id
+        ) AS picked";
+    $countStmt = $pdo->prepare($countSql);
+    foreach ($countParams as $key => $value) {
+        $countStmt->bindValue($key, $value);
+    }
+    $countStmt->execute();
+    $count = (int)$countStmt->fetchColumn();
+    $totalPages = (int)ceil($count / $perPage);
+    if ($totalPages > 0 && $page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $orderBySql = "ORDER BY
+        CASE
+            WHEN p.name REGEXP '^[ァ-ヶー]' THEN 1
+            WHEN p.name REGEXP '^[A-Za-z]' THEN 2
+            ELSE 3
+        END,
+        p.name ASC";
+    if ($sort === "year_desc") {
+        $orderBySql = "ORDER BY p.registered_on DESC, p.name ASC";
+    } elseif ($sort === "score_desc") {
+        $orderBySql = "ORDER BY (
+            CASE
+                WHEN p.registered_on IS NULL THEN 6
+                WHEN YEAR(p.registered_on) >= 1990 THEN 12
+                ELSE 6
+            END
+            + 30
+            + CASE WHEN COALESCE(stats.crop_count, 0) >= 30 THEN 8 ELSE 4 END
+            + 5
+            + CASE WHEN COALESCE(stats.target_count, 0) >= 30 THEN 10 ELSE 5 END
+        ) DESC, p.name ASC";
+    }
+
+    $queryParams = $countParams + $statsParams;
 
     $sql =
         "SELECT
@@ -200,22 +273,7 @@ if ($hasSearchCondition) {
             SELECT
                 prf.pesticide_id,
                 MIN(prf.id) AS pick_id
-            FROM pesticide_rules prf
-            JOIN pesticides p_main
-                ON p_main.id = prf.pesticide_id
-            LEFT JOIN crops cf
-                ON cf.id = prf.crop_id
-            LEFT JOIN targets tf
-                ON tf.id = prf.target_id
-            LEFT JOIN methods mf
-                ON mf.id = prf.method_id
-            WHERE
-                p_main.hide_in_search = 0
-                $pickedCategoryWhereSql
-                $keywordWhereSql
-                AND (:crop1 = '' OR cf.name = :crop2)
-                AND (:target1 = '' OR tf.name = :target2)
-                $methodWhereSql
+            $pickedFromWhereSql
             GROUP BY prf.pesticide_id
         ) AS picked
         JOIN pesticide_rules pr
@@ -235,10 +293,16 @@ if ($hasSearchCondition) {
             GROUP BY pesticide_id
         ) AS stats
             ON stats.pesticide_id = pr.pesticide_id
-        ORDER BY p.name ASC";
+        $orderBySql
+        LIMIT :limit OFFSET :offset";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params + $methodParams + $keywordParams);
+    foreach ($queryParams as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->bindValue(":limit", $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+    $stmt->execute();
 
     // =============================================
     // 並び替え（スコア順、名前順）
@@ -248,43 +312,6 @@ if ($hasSearchCondition) {
     foreach ($filtered as &$row) {
         //カケトコスコア
         $row["_score"] = (int)kaketocoScore($row);
-
-        //登録年度
-        $d = (string)($row["registered_on"] ?? "");
-        $row["_year"] = ($d !== "" && preg_match('/^\d{4}/', $d)) ? (int)substr($d, 0, 4) : 0;
     }
     unset($row);
-
-    if ($sort === "name_asc") {
-        usort($filtered, function ($a, $b) {
-            return strcmp(
-                (string)($a["name"] ?? ""),
-                (string)($b["name"] ?? "")
-            );
-        });
-    } elseif ($sort === "year_desc") {
-        usort($filtered, function ($a, $b) {
-            $ya = (int)($a["_year"] ?? 0);
-            $yb = (int)($b["_year"] ?? 0);
-            if ($yb !== $ya) return $yb <=> $ya;
-            return strcmp(
-                (string)($a["name"] ?? ""),
-                (string)($b["name"] ?? ""),
-            );
-        });
-    } else {
-        usort($filtered, function ($a, $b) {
-            $sa = (int)($a["_score"] ?? 0);
-            $sb = (int)($b["_score"] ?? 0);
-            if ($sb !== $sa) {
-                return $sb <=> $sa;
-            }
-            return strcmp(
-                (string)($a["name"] ?? ""),
-                (string)($b["name"] ?? "")
-            );
-        });
-    }
-
-    $count = count($filtered);
 }
