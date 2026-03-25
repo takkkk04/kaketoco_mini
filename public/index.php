@@ -240,6 +240,7 @@ $BADGE_DEFS = [
                         $targetList = $targetListStmt->fetchAll(PDO::FETCH_COLUMN);
                         //カード内バッジ 浸透移行性、浸達性、速効性
                         $badges = buildBadges($p, $BADGE_DEFS);
+                        $showRuleSpecs = ($crop !== "");
                         ?>
 
                         <article class="result_card fav_card">
@@ -305,8 +306,8 @@ $BADGE_DEFS = [
                                         <span class="spec_label">希釈倍率</span>
                                         <span class="spec_val">
                                             <?php
-                                            echo isset($p["magnification"])
-                                                ? htmlspecialchars((string)$p["magnification"], ENT_QUOTES, "UTF-8") : "";
+                                            echo $showRuleSpecs && isset($p["magnification"])
+                                                ? htmlspecialchars((string)$p["magnification"], ENT_QUOTES, "UTF-8") : "-";
                                             ?>
                                         </span>
                                     </div>
@@ -315,8 +316,8 @@ $BADGE_DEFS = [
                                         <span class="spec_label">使用回数</span>
                                         <span class="spec_val">
                                             <?php
-                                            echo isset($p["times"])
-                                                ? htmlspecialchars((string)$p["times"], ENT_QUOTES, "UTF-8") : "";
+                                            echo $showRuleSpecs && isset($p["times"])
+                                                ? htmlspecialchars((string)$p["times"], ENT_QUOTES, "UTF-8") : "-";
                                             ?>
                                         </span>
                                     </div>
@@ -325,8 +326,8 @@ $BADGE_DEFS = [
                                         <span class="spec_label">収穫前日数</span>
                                         <span class="spec_val">
                                             <?php
-                                            echo isset($p["timing"])
-                                                ? htmlspecialchars((string)$p["timing"], ENT_QUOTES, "UTF-8") : "";
+                                            echo $showRuleSpecs && isset($p["timing"])
+                                                ? htmlspecialchars((string)$p["timing"], ENT_QUOTES, "UTF-8") : "-";
                                             ?>
                                         </span>
                                     </div>
@@ -334,7 +335,9 @@ $BADGE_DEFS = [
                                     <div class="spec_row">
                                         <span class="spec_label">使用方法</span>
                                         <span class="spec_val">
-                                            <?php echo htmlspecialchars((string)$p["method"] ?? "", ENT_QUOTES, "UTF-8"); ?>
+                                            <?php echo $showRuleSpecs
+                                                ? htmlspecialchars((string)$p["method"] ?? "", ENT_QUOTES, "UTF-8")
+                                                : "-"; ?>
                                         </span>
                                     </div>
 
