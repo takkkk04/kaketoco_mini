@@ -254,6 +254,7 @@ if ($hasSearchCondition) {
 
     $sql =
         "SELECT
+            p.id AS pesticide_id,
             p.registration_number AS registration_number,
             p.name AS name,
             p.shopify_id AS shopify_id,

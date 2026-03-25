@@ -248,11 +248,13 @@ $BADGE_DEFS = [
                             <div class="card_title">
                                 <!-- 商品名 -->
                                 <span class="card_title_name">
-                                    <?php echo htmlspecialchars(
-                                        mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"),
-                                        ENT_QUOTES,
-                                        "UTF-8"
-                                    ); ?>
+                                    <a href="./pesticide_detail.php?id=<?php echo (int)($p["pesticide_id"] ?? 0); ?>">
+                                        <?php echo htmlspecialchars(
+                                            mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"),
+                                            ENT_QUOTES,
+                                            "UTF-8"
+                                        ); ?>
+                                    </a>
                                 </span>
 
                                 <!-- RACコード -->
