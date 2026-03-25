@@ -241,6 +241,7 @@ $BADGE_DEFS = [
                         //カード内バッジ 浸透移行性、浸達性、速効性
                         $badges = buildBadges($p, $BADGE_DEFS);
                         $showRuleSpecs = ($crop !== "");
+                        $mixCount = (int)($p["mix_count"] ?? 0);
                         ?>
 
                         <article class="result_card fav_card">
@@ -349,8 +350,13 @@ $BADGE_DEFS = [
                                     </div>
 
                                     <!-- 特徴バッジ -->
-                                    <?php if (!empty($badges)): ?>
+                                    <?php if (!empty($badges) || $mixCount >= 2): ?>
                                         <div class="badge_row">
+                                            <?php if ($mixCount >= 2): ?>
+                                                <span class="badge">
+                                                    <?php echo $mixCount; ?>種混合
+                                                </span>
+                                            <?php endif; ?>
                                             <?php foreach ($badges as $b): ?>
                                                 <span class="badge <?php echo htmlspecialchars($b["class"], ENT_QUOTES, "UTF-8"); ?>">
                                                     <?php echo htmlspecialchars($b["label"], ENT_QUOTES, "UTF-8"); ?>

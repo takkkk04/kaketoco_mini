@@ -185,6 +185,7 @@ if ($hasSearchCondition) {
             p.name AS name,
             p.shopify_id AS shopify_id,
             p.registered_on AS registered_on,
+            p.mix_count AS mix_count,
             pr.magnification_text AS magnification,
             pr.timing_text AS timing,
             pr.times_text AS times,
