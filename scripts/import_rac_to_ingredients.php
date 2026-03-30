@@ -1,4 +1,10 @@
 <?php
+// =============================================
+// RACコードCSVインポート
+// =============================================
+// RACコードはクロップライフジャパン（https://www.croplifejapan.org/activity/mechanism.html）
+// RACコード検索表をダウンロード
+// 殺虫剤、殺菌剤、除草剤を切り分けCSV（UTF-8）で保存
 
 declare(strict_types=1);
 
@@ -9,19 +15,19 @@ assertCli();
 
 const RAC_DEFAULT_CSV_PATH = __DIR__ . "/../data/20260330_rac_insecticide_test20.csv";
 const RAC_DEFAULT_GROUP = "I";
-const RAC_SOURCE_ENCODING = "SJIS-win";
+const RAC_SOURCE_ENCODING = "UTF-8";
 
 const RAC_REQUIRED_HEADERS = [
     "有効成分-1",
-    "RACｺｰﾄﾞ-1",
+    "RACコード-1",
     "有効成分-2",
-    "RACｺｰﾄﾞ-2",
+    "RACコード-2",
     "有効成分-3",
-    "RACｺｰﾄﾞ-3",
+    "RACコード-3",
     "有効成分-4",
-    "RACｺｰﾄﾞ-4",
+    "RACコード-4",
     "有効成分-5",
-    "RACｺｰﾄﾞ-5",
+    "RACコード-5",
 ];
 
 function resolveRacCsvPath(array $argv): string
@@ -101,8 +107,17 @@ function normalizeRacCode(?string $value): string
         return "";
     }
 
+    $value = mb_convert_kana($value, "KV", "UTF-8");
     $value = str_replace(["－", "ｰ", "―", "−", "‐", "–", "—"], "-", $value);
-    return trim($value);
+    $value = preg_replace('/[「」"\'`]/u', "", $value) ?? $value;
+    $value = preg_replace('/\s+/u', '', $value) ?? $value;
+    $value = trim($value);
+
+    if ($value !== "" && preg_match('/^-+$/u', $value)) {
+        return "-";
+    }
+
+    return $value;
 }
 
 function importRacToIngredients(PDO $pdo, string $csvPath, string $racGroup): array
@@ -112,11 +127,19 @@ function importRacToIngredients(PDO $pdo, string $csvPath, string $racGroup): ar
         "processed_rows" => 0,
         "processed_pairs" => 0,
         "updated" => 0,
-        "skipped" => 0,
+        "unchanged" => 0,
+        "empty_pairs" => 0,
+        "not_found" => 0,
         "failed" => 0,
     ];
     $lineNumber = 1;
 
+    $findStmt = $pdo->prepare(
+        "SELECT id, rac_code, rac_group
+         FROM ingredients
+         WHERE name_normalized = :ingredient_name_normalized
+         LIMIT 1"
+    );
     $updateStmt = $pdo->prepare(
         "UPDATE ingredients
          SET rac_code = :rac_code,
@@ -140,25 +163,55 @@ function importRacToIngredients(PDO $pdo, string $csvPath, string $racGroup): ar
                 $assoc = combineRacRow($header, $row);
 
                 for ($i = 1; $i <= 5; $i++) {
-                    $ingredientName = normalizeIngredientNameForRac($assoc["有効成分-{$i}"] ?? "");
-                    $racCode = normalizeRacCode($assoc["RACｺｰﾄﾞ-{$i}"] ?? "");
+                    try {
+                        $ingredientName = normalizeIngredientNameForRac($assoc["有効成分-{$i}"] ?? "");
+                        $racCode = normalizeRacCode($assoc["RACコード-{$i}"] ?? "");
 
-                    if ($ingredientName === "" || $racCode === "") {
-                        $counts["skipped"]++;
-                        continue;
-                    }
+                        if ($ingredientName === "" || $racCode === "") {
+                            $counts["empty_pairs"]++;
+                            continue;
+                        }
 
-                    $counts["processed_pairs"]++;
-                    $updateStmt->execute([
-                        ":rac_code" => $racCode,
-                        ":rac_group" => $racGroup,
-                        ":ingredient_name_normalized" => $ingredientName,
-                    ]);
+                        $counts["processed_pairs"]++;
 
-                    if ($updateStmt->rowCount() > 0) {
-                        $counts["updated"]++;
-                    } else {
-                        $counts["skipped"]++;
+                        $findStmt->execute([
+                            ":ingredient_name_normalized" => $ingredientName,
+                        ]);
+                        $current = $findStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+                        if ($current === null) {
+                            $counts["not_found"]++;
+                            continue;
+                        }
+
+                        $currentRacCode = normalizeRacCode((string)($current["rac_code"] ?? ""));
+                        $currentRacGroup = strtoupper(trim((string)($current["rac_group"] ?? "")));
+                        if ($currentRacCode === $racCode && $currentRacGroup === strtoupper($racGroup)) {
+                            $counts["unchanged"]++;
+                            continue;
+                        }
+
+                        $updateStmt->execute([
+                            ":rac_code" => $racCode,
+                            ":rac_group" => $racGroup,
+                            ":ingredient_name_normalized" => $ingredientName,
+                        ]);
+
+                        if ($updateStmt->rowCount() > 0) {
+                            $counts["updated"]++;
+                        } else {
+                            $counts["unchanged"]++;
+                        }
+                    } catch (Throwable $e) {
+                        $counts["failed"]++;
+                        writeError(
+                            sprintf(
+                                "[import_rac_to_ingredients] row=%d pair=%d error=%s",
+                                $lineNumber,
+                                $i,
+                                $e->getMessage()
+                            )
+                        );
                     }
                 }
             } catch (Throwable $e) {
@@ -184,7 +237,9 @@ function printRacImportSummary(array $counts): void
     writeInfo("processed_rows: " . (string)$counts["processed_rows"]);
     writeInfo("processed_pairs: " . (string)$counts["processed_pairs"]);
     writeInfo("updated: " . (string)$counts["updated"]);
-    writeInfo("skipped: " . (string)$counts["skipped"]);
+    writeInfo("unchanged: " . (string)$counts["unchanged"]);
+    writeInfo("empty_pairs: " . (string)$counts["empty_pairs"]);
+    writeInfo("not_found: " . (string)$counts["not_found"]);
     writeInfo("failed: " . (string)$counts["failed"]);
 }
 

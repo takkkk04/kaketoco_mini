@@ -14,7 +14,7 @@ declare(strict_types=1);
 function assertCli(): void
 {
     if (PHP_SAPI !== "cli") {
-        fwrite(STDERR, "CLI専用スクリプトです。\n");
+        fwrite(STDERR, "CLIから実行してください。\n");
         exit(1);
     }
 }
