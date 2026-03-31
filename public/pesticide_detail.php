@@ -44,6 +44,36 @@ $displayValue = static function ($value): string {
                             <dd><?php echo htmlspecialchars((string)$pesticide["name"], ENT_QUOTES, "UTF-8"); ?></dd>
                         </div>
                         <div class="detail_info_item">
+                            <dt>有効成分</dt>
+                            <dd>
+                                <?php if ($ingredientRows === []): ?>
+                                    成分情報はありません。
+                                <?php else: ?>
+                                    <?php foreach ($ingredientRows as $ingredient): ?>
+                                        <?php
+                                        $ingredientName = trim((string)($ingredient["ingredient_name"] ?? ""));
+                                        $concentration = trim((string)($ingredient["concentration_text"] ?? ""));
+                                        $racText = trim((string)($ingredient["rac_text"] ?? ""));
+                                        if ($ingredientName === "") {
+                                            continue;
+                                        }
+                                        ?>
+                                        <div>
+                                            <?php echo htmlspecialchars($ingredientName, ENT_QUOTES, "UTF-8"); ?>
+                                            <?php if ($concentration !== ""): ?>
+                                                （<?php echo htmlspecialchars($concentration, ENT_QUOTES, "UTF-8"); ?>）
+                                            <?php endif; ?>
+                                            <?php if ($racText !== ""): ?>
+                                                <span class="rac_code">
+                                                    RAC:<?php echo htmlspecialchars($racText, ENT_QUOTES, "UTF-8"); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </dd>
+                        </div>
+                        <div class="detail_info_item">
                             <dt>登録番号</dt>
                             <dd><?php echo htmlspecialchars((string)$pesticide["registration_number"], ENT_QUOTES, "UTF-8"); ?></dd>
                         </div>
