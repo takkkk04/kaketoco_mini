@@ -4,7 +4,14 @@
 // =============================================
 // RACコードはクロップライフジャパン（https://www.croplifejapan.org/activity/mechanism.html）
 // RACコード検索表をダウンロード
-// 殺虫剤、殺菌剤、除草剤、殺虫殺菌剤等カテゴリ全てを切り分けCSV（UTF-8）で保存
+// 殺虫剤、殺菌剤、除草剤、植物成長調整剤、殺そ剤を切り分けCSV（UTF-8）で保存
+// ファイル命名規則 YYYYMMDD_rac_{category}.csv
+// 殺虫剤 20260330_rac_insecticide.csv
+// 殺菌剤 20260330_rac_fungicide.csv
+// 除草剤 20260330_rac_herbicide.csv
+// 植調剤 20260330_rac_plant_growth_regulator.csv
+// 殺そ剤 20260330_rac_rodenticide.csv
+
 declare(strict_types=1);
 
 require_once __DIR__ . "/../src/backend/db.php";
@@ -147,15 +154,24 @@ function parseRacLabels(string $raw, string $defaultGroup): array
             continue;
         }
 
-        if (preg_match('/^\s*(.*?)\s*\(\s*([A-Za-z]+)\s*\*\s*\)\s*$/u', $part, $m) === 1) {
+        if (preg_match('/^\s*(.*?)\s*\(\s*([^)]+?)\s*(?:\*)?\s*\)\s*$/u', $part, $m) === 1) {
             $racCode = normalizeRacCodeToken((string)$m[1]);
-            $racGroup = strtoupper(trim((string)$m[2]));
+            $groupRaw = normalizeRacCodeToken((string)$m[2]);
+            if ($groupRaw === "植") {
+                $racCode = "植";
+                $racGroup = null;
+            } else {
+                $racGroup = strtoupper(trim($groupRaw));
+            }
         } else {
             $racCode = normalizeRacCodeToken($part);
             $racGroup = strtoupper(trim($defaultGroup));
         }
 
-        if ($racCode === "" || $racGroup === "") {
+        if ($racCode === "") {
+            continue;
+        }
+        if ($racGroup !== null && $racGroup === "") {
             continue;
         }
 
@@ -166,6 +182,13 @@ function parseRacLabels(string $raw, string $defaultGroup): array
     }
 
     return $labels;
+}
+
+function hasPlantNotation(string $raw): bool
+{
+    $raw = mb_convert_kana(trim($raw), "KV", "UTF-8");
+    $raw = str_replace(["（", "）"], ["(", ")"], $raw);
+    return preg_match('/\(\s*植\s*\)/u', $raw) === 1;
 }
 
 function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defaultGroup): array
@@ -180,6 +203,8 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
         "empty_pairs" => 0,
         "not_found" => 0,
         "existing_reused" => 0,
+        "plant_added" => 0,
+        "plant_skipped" => 0,
         "failed" => 0,
     ];
     $lineNumber = 1;
@@ -202,6 +227,19 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
          FROM ingredient_rac_labels
          WHERE ingredient_id = :ingredient_id
          LIMIT 1"
+    );
+    $existsPlantStmt = $pdo->prepare(
+        "SELECT 1
+         FROM ingredient_rac_labels
+         WHERE ingredient_id = :ingredient_id
+           AND rac_group IS NULL
+           AND rac_code = '植'
+         LIMIT 1"
+    );
+    $nextSortOrderStmt = $pdo->prepare(
+        "SELECT COALESCE(MAX(sort_order), 0) + 1
+         FROM ingredient_rac_labels
+         WHERE ingredient_id = :ingredient_id"
     );
     $insertLabelStmt = $pdo->prepare(
         "INSERT INTO ingredient_rac_labels (
@@ -273,6 +311,28 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
                         $hasExistingLabel = $existsLabelStmt->fetchColumn() !== false;
                         if ($hasExistingLabel) {
                             $counts["existing_reused"]++;
+                            if (hasPlantNotation($racRaw)) {
+                                $existsPlantStmt->execute([
+                                    ":ingredient_id" => $ingredientId,
+                                ]);
+                                $hasPlant = $existsPlantStmt->fetchColumn() !== false;
+
+                                if ($hasPlant) {
+                                    $counts["plant_skipped"]++;
+                                } else {
+                                    $nextSortOrderStmt->execute([
+                                        ":ingredient_id" => $ingredientId,
+                                    ]);
+                                    $nextSortOrder = (int)$nextSortOrderStmt->fetchColumn();
+                                    $insertLabelStmt->execute([
+                                        ":ingredient_id" => $ingredientId,
+                                        ":sort_order" => $nextSortOrder,
+                                        ":rac_group" => null,
+                                        ":rac_code" => "植",
+                                    ]);
+                                    $counts["plant_added"]++;
+                                }
+                            }
                             continue;
                         }
 
@@ -305,7 +365,8 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
                                 continue;
                             }
 
-                            $currentGroup = strtoupper(trim((string)($current["rac_group"] ?? "")));
+                            $currentGroupRaw = $current["rac_group"] ?? null;
+                            $currentGroup = $currentGroupRaw === null ? null : strtoupper(trim((string)$currentGroupRaw));
                             $currentCode = normalizeRacCodeToken((string)($current["rac_code"] ?? ""));
                             if ($currentGroup === $label["rac_group"] && $currentCode === $label["rac_code"]) {
                                 $counts["unchanged"]++;
@@ -359,6 +420,8 @@ function printRacLabelImportSummary(array $counts): void
     writeInfo("empty_pairs: " . (string)$counts["empty_pairs"]);
     writeInfo("not_found: " . (string)$counts["not_found"]);
     writeInfo("existing_reused: " . (string)$counts["existing_reused"]);
+    writeInfo("plant_added: " . (string)$counts["plant_added"]);
+    writeInfo("plant_skipped: " . (string)$counts["plant_skipped"]);
     writeInfo("failed: " . (string)$counts["failed"]);
 }
 
