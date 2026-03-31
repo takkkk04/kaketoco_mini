@@ -1,4 +1,11 @@
 <?php
+// =============================================
+// 適用表外項目CSVインポート
+// =============================================
+// 登録番号、農薬の名称、速効性、浸透移行性、深達性、毒性、shopify_idでCSV作成
+// ファイル名 YYYYMMDD_pesticide_master_extra.csv で作成
+// SSHログイン後コード実行
+// php scripts/import_pesticide_extra_attributes.php data/20260331_pesticide_master_extra.csv
 
 declare(strict_types=1);
 
