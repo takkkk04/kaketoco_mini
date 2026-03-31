@@ -4,7 +4,7 @@
 // =============================================
 // RACコードはクロップライフジャパン（https://www.croplifejapan.org/activity/mechanism.html）
 // RACコード検索表をダウンロード
-// 殺虫剤、殺菌剤、除草剤を切り分けCSV（UTF-8）で保存
+// 殺虫剤、殺菌剤、除草剤、殺虫殺菌剤等カテゴリ全てを切り分けCSV（UTF-8）で保存
 declare(strict_types=1);
 
 require_once __DIR__ . "/../src/backend/db.php";
