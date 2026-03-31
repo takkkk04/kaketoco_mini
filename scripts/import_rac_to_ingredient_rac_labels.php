@@ -179,6 +179,7 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
         "unchanged" => 0,
         "empty_pairs" => 0,
         "not_found" => 0,
+        "existing_reused" => 0,
         "failed" => 0,
     ];
     $lineNumber = 1;
@@ -194,6 +195,12 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
          FROM ingredient_rac_labels
          WHERE ingredient_id = :ingredient_id
            AND sort_order = :sort_order
+         LIMIT 1"
+    );
+    $existsLabelStmt = $pdo->prepare(
+        "SELECT 1
+         FROM ingredient_rac_labels
+         WHERE ingredient_id = :ingredient_id
          LIMIT 1"
     );
     $insertLabelStmt = $pdo->prepare(
@@ -255,10 +262,20 @@ function importRacToIngredientRacLabels(PDO $pdo, string $csvPath, string $defau
 
                         if ($ingredient === null) {
                             $counts["not_found"]++;
+                            writeError("[not_found] row={$lineNumber} ingredient={$ingredientName} rac={$racRaw} group={$defaultGroup}");
                             continue;
                         }
 
                         $ingredientId = (int)$ingredient["id"];
+                        $existsLabelStmt->execute([
+                            ":ingredient_id" => $ingredientId,
+                        ]);
+                        $hasExistingLabel = $existsLabelStmt->fetchColumn() !== false;
+                        if ($hasExistingLabel) {
+                            $counts["existing_reused"]++;
+                            continue;
+                        }
+
                         $labels = parseRacLabels($racRaw, $defaultGroup);
 
                         if ($labels === []) {
@@ -341,6 +358,7 @@ function printRacLabelImportSummary(array $counts): void
     writeInfo("unchanged: " . (string)$counts["unchanged"]);
     writeInfo("empty_pairs: " . (string)$counts["empty_pairs"]);
     writeInfo("not_found: " . (string)$counts["not_found"]);
+    writeInfo("existing_reused: " . (string)$counts["existing_reused"]);
     writeInfo("failed: " . (string)$counts["failed"]);
 }
 
