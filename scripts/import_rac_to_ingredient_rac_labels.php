@@ -6,11 +6,14 @@
 // RACコード検索表をダウンロード
 // 殺虫剤、殺菌剤、除草剤、植物成長調整剤、殺そ剤を切り分けCSV（UTF-8）で保存
 // ファイル命名規則 YYYYMMDD_rac_{category}.csv
-// 殺虫剤 20260330_rac_insecticide.csv
-// 殺菌剤 20260330_rac_fungicide.csv
-// 除草剤 20260330_rac_herbicide.csv
-// 植調剤 20260330_rac_plant_growth_regulator.csv
-// 殺そ剤 20260330_rac_rodenticide.csv
+// 殺虫剤 20260330_rac_insecticide.csv (I)
+// 殺菌剤 20260330_rac_fungicide.csv (F)
+// 除草剤 20260330_rac_herbicide.csv (H)
+// 植調剤 20260330_rac_plant_growth_regulator.csv (I)
+// 殺そ剤 20260330_rac_rodenticide.csv (X)
+// ターミナル操作
+// SSHログイン
+// php scripts/import_rac_to_ingredient_rac_labels.php data/ファイル名.csv I <-最後の1文字はファイルによって変える
 
 declare(strict_types=1);
 
