@@ -259,9 +259,13 @@ $BADGE_DEFS = [
 
                                 <!-- RACコード -->
                                 <div class="card_title_right">
-                                    <?php if (!empty($p["rac_code"])): ?>
+                                    <?php
+                                    $pesticideId = (int)($p["pesticide_id"] ?? 0);
+                                    $racText = (string)($racMap[$pesticideId] ?? "");
+                                    ?>
+                                    <?php if ($racText !== ""): ?>
                                         <span class="rac_code">
-                                            RAC:<?php echo htmlspecialchars($p["rac_code"], ENT_QUOTES, "UTF-8"); ?>
+                                            RAC:<?php echo htmlspecialchars($racText, ENT_QUOTES, "UTF-8"); ?>
                                         </span>
                                     <?php endif; ?>
 
