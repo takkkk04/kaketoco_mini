@@ -10,8 +10,6 @@
             </span>
             <a href="./logout.php" class="logout_btn">ログアウト</a>
         </div>
-    <?php else: ?>
-        <a href="./login.php" class="register_btn">ログイン</a>
     <?php endif; ?>
 
     <div class="header_menu">

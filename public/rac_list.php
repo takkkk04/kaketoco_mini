@@ -9,6 +9,17 @@ $code = trim((string)($_GET["code"] ?? ""));
 $rows = [];
 $errorMessage = "";
 
+$searchParamKeys = ["keyword", "category", "crop", "target", "method", "sort", "page"];
+$searchParams = [];
+foreach ($searchParamKeys as $key) {
+    $value = trim((string)($_GET[$key] ?? ""));
+    if ($value !== "") {
+        $searchParams[$key] = $value;
+    }
+}
+$returnQuery = http_build_query($searchParams);
+$backToSearchUrl = "./index.php" . ($returnQuery !== "" ? "?" . $returnQuery : "") . "#search_form";
+
 if ($group === "" || $code === "") {
     $errorMessage = "RACの指定が不正です。";
 } else {
@@ -78,7 +89,7 @@ if ($group === "" || $code === "") {
                     <span id="result_count"><?php echo (int)count($rows); ?>件</span>
                 </div>
                 <div class="rac_heading_right">
-                    <a href="./index.php" class="rac_back_btn">検索に戻る</a>
+                    <a href="<?php echo htmlspecialchars($backToSearchUrl, ENT_QUOTES, "UTF-8"); ?>" class="rac_back_btn">検索に戻る</a>
                 </div>
             </div>
 
