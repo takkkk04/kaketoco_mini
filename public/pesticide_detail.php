@@ -36,51 +36,66 @@ $displayValue = static function ($value): string {
                     <p class="detail_error"><?php echo htmlspecialchars($errorMessage, ENT_QUOTES, "UTF-8"); ?></p>
                 </section>
             <?php else: ?>
-                <section class="detail_card">
-                    <h2 class="detail_section_title">基本情報</h2>
-                    <dl class="detail_info_grid">
-                        <div class="detail_info_item">
-                            <dt>農薬名</dt>
-                            <dd><?php echo htmlspecialchars((string)$pesticide["name"], ENT_QUOTES, "UTF-8"); ?></dd>
+                <?php
+                $ingredientItems = [];
+                foreach ($ingredientRows as $ingredient) {
+                    $ingredientName = trim((string)($ingredient["ingredient_name"] ?? ""));
+                    $concentration = trim((string)($ingredient["concentration_text"] ?? ""));
+                    $racText = trim((string)($ingredient["rac_text"] ?? ""));
+                    if ($ingredientName === "") {
+                        continue;
+                    }
+
+                    $ingredientItems[] = [
+                        "name" => $ingredientName,
+                        "concentration" => $concentration,
+                        "rac" => $racText,
+                    ];
+                }
+                ?>
+
+                <section class="detail_top">
+                    <div class="detail_image detail_card">
+                        <h2 class="detail_product_name"><?php echo htmlspecialchars((string)$pesticide["name"], ENT_QUOTES, "UTF-8"); ?></h2>
+                        <img src="./image/coming_soon.jpeg" alt="商品画像（準備中）">
+                    </div>
+
+                    <div class="detail_summary detail_card">
+                        <h2 class="detail_section_title">基本情報</h2>
+                        <div class="summary_list">
+                            <div class="summary_row">
+                                <div class="summary_label">登録年月日</div>
+                                <div class="summary_value"><?php echo htmlspecialchars($displayValue($pesticide["registered_on"] ?? null), ENT_QUOTES, "UTF-8"); ?></div>
+                            </div>
+                            <div class="summary_row">
+                                <div class="summary_label">有効成分</div>
+                                <div class="summary_value">
+                                    <?php if ($ingredientItems === []): ?>
+                                        成分情報はありません。
+                                    <?php else: ?>
+                                        <?php foreach ($ingredientItems as $item): ?>
+                                            <div>
+                                                <?php echo htmlspecialchars((string)$item["name"], ENT_QUOTES, "UTF-8"); ?>
+                                                <?php if ((string)$item["concentration"] !== ""): ?>
+                                                    （<?php echo htmlspecialchars((string)$item["concentration"], ENT_QUOTES, "UTF-8"); ?>）
+                                                <?php endif; ?>
+                                                <?php if ((string)$item["rac"] !== ""): ?>
+                                                    <span class="rac_code">RAC:<?php echo htmlspecialchars((string)$item["rac"], ENT_QUOTES, "UTF-8"); ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="summary_row">
+                                <div class="summary_label">カケトコスコア</div>
+                                <div class="summary_value">-</div>
+                            </div>
                         </div>
-                        <div class="detail_info_item">
-                            <dt>有効成分</dt>
-                            <dd>
-                                <?php if ($ingredientRows === []): ?>
-                                    成分情報はありません。
-                                <?php else: ?>
-                                    <?php foreach ($ingredientRows as $ingredient): ?>
-                                        <?php
-                                        $ingredientName = trim((string)($ingredient["ingredient_name"] ?? ""));
-                                        $concentration = trim((string)($ingredient["concentration_text"] ?? ""));
-                                        $racText = trim((string)($ingredient["rac_text"] ?? ""));
-                                        if ($ingredientName === "") {
-                                            continue;
-                                        }
-                                        ?>
-                                        <div>
-                                            <?php echo htmlspecialchars($ingredientName, ENT_QUOTES, "UTF-8"); ?>
-                                            <?php if ($concentration !== ""): ?>
-                                                （<?php echo htmlspecialchars($concentration, ENT_QUOTES, "UTF-8"); ?>）
-                                            <?php endif; ?>
-                                            <?php if ($racText !== ""): ?>
-                                                <span class="rac_code">
-                                                    RAC:<?php echo htmlspecialchars($racText, ENT_QUOTES, "UTF-8"); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </dd>
-                        </div>
-                        <div class="detail_info_item">
-                            <dt>登録番号</dt>
-                            <dd><?php echo htmlspecialchars((string)$pesticide["registration_number"], ENT_QUOTES, "UTF-8"); ?></dd>
-                        </div>
-                    </dl>
+                    </div>
                 </section>
 
-                <section class="detail_card">
+                <section class="detail_rules detail_card">
                     <h2 class="detail_section_title">適用表</h2>
                     <?php if ($ruleRows === []): ?>
                         <p class="detail_empty">適用情報がありません。</p>

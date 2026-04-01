@@ -19,9 +19,27 @@ if ($id <= 0) {
 }
 
 $pesticideStmt = $pdo->prepare(
-    "SELECT id, name, registration_number
-     FROM pesticides
-     WHERE id = :id
+    "SELECT
+        p.id,
+        p.name,
+        p.registration_number,
+        p.category,
+        p.registered_on,
+        f.name AS formulation_name,
+        r.name AS registrant_name,
+        pea.quickly,
+        pea.systemic,
+        pea.translaminar,
+        pea.toxicity,
+        pea.shopify_id
+     FROM pesticides p
+     LEFT JOIN formulations f
+        ON f.id = p.formulation_id
+     LEFT JOIN registrants r
+        ON r.id = p.registrant_id
+     LEFT JOIN pesticide_extra_attributes pea
+        ON pea.registration_number = p.registration_number
+     WHERE p.id = :id
      LIMIT 1"
 );
 $pesticideStmt->bindValue(":id", $id, PDO::PARAM_INT);
