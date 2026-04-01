@@ -71,6 +71,7 @@ $detailCarryParams = [
     "page" => (string)$page,
 ];
 $detailCarryQuery = http_build_query($detailCarryParams);
+$racCarryQuery = $detailCarryQuery;
 
 ?>
 
@@ -295,6 +296,9 @@ $detailCarryQuery = http_build_query($detailCarryParams);
                                             $pair = explode(":", $racPart, 2);
                                             if (count($pair) === 2 && $pair[0] !== "" && $pair[1] !== ""):
                                                 $racUrl = "./rac_list.php?group=" . urlencode($pair[0]) . "&code=" . urlencode($pair[1]);
+                                                if ($racCarryQuery !== "") {
+                                                    $racUrl .= "&" . $racCarryQuery;
+                                                }
                                         ?>
                                                 <a class="rac_code" href="<?php echo htmlspecialchars($racUrl, ENT_QUOTES, "UTF-8"); ?>">
                                                     RAC:<?php echo htmlspecialchars($racPart, ENT_QUOTES, "UTF-8"); ?>
