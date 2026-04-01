@@ -61,6 +61,17 @@ if (trim((string)$method) !== "") {
     ];
 }
 
+$detailCarryParams = [
+    "keyword" => (string)$keyword,
+    "category" => (string)$category,
+    "crop" => (string)$crop,
+    "target" => (string)$target,
+    "method" => (string)$method,
+    "sort" => (string)$sort,
+    "page" => (string)$page,
+];
+$detailCarryQuery = http_build_query($detailCarryParams);
+
 ?>
 
 <!DOCTYPE html>
@@ -262,7 +273,7 @@ if (trim((string)$method) !== "") {
                             <div class="card_title">
                                 <!-- 商品名 -->
                                 <span class="card_title_name">
-                                    <a href="./pesticide_detail.php?id=<?php echo (int)($p["pesticide_id"] ?? 0); ?>">
+                                    <a href="./pesticide_detail.php?id=<?php echo (int)($p["pesticide_id"] ?? 0); ?><?php echo $detailCarryQuery !== "" ? "&" . htmlspecialchars($detailCarryQuery, ENT_QUOTES, "UTF-8") : ""; ?>">
                                         <?php echo htmlspecialchars(
                                             mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"),
                                             ENT_QUOTES,

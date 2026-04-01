@@ -14,6 +14,45 @@ $displayValue = static function ($value): string {
 
 $placeholderImage = "./image/coming_soon.jpeg";
 $shopifyId = trim((string)($pesticide["shopify_id"] ?? ""));
+
+$searchParamKeys = ["keyword", "category", "crop", "target", "method", "sort", "page"];
+$searchParams = [];
+foreach ($searchParamKeys as $key) {
+    $value = trim((string)($_GET[$key] ?? ""));
+    if ($value !== "") {
+        $searchParams[$key] = $value;
+    }
+}
+
+$returnQuery = http_build_query($searchParams);
+$backToListUrl = "./index.php" . ($returnQuery !== "" ? "?" . $returnQuery : "");
+$backToSearchUrl = $backToListUrl . "#search_form";
+
+$methodLabelMap = [
+    "散布" => "散布",
+    "灌注" => "灌注",
+    "ドローン散布" => "ドローン散布",
+];
+
+$currentFilters = [];
+if (!empty($searchParams["keyword"])) {
+    $currentFilters[] = ["label" => "農薬名", "value" => $searchParams["keyword"]];
+}
+if (!empty($searchParams["category"])) {
+    $currentFilters[] = ["label" => "カテゴリ", "value" => $searchParams["category"]];
+}
+if (!empty($searchParams["crop"])) {
+    $currentFilters[] = ["label" => "作物", "value" => $searchParams["crop"]];
+}
+if (!empty($searchParams["target"])) {
+    $currentFilters[] = ["label" => "病害虫", "value" => $searchParams["target"]];
+}
+if (!empty($searchParams["method"])) {
+    $currentFilters[] = [
+        "label" => "使用方法",
+        "value" => (string)($methodLabelMap[$searchParams["method"]] ?? $searchParams["method"]),
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -33,8 +72,30 @@ $shopifyId = trim((string)($pesticide["shopify_id"] ?? ""));
     <main class="app_main detail_main">
         <section class="detail_page">
             <header class="detail_header">
-                <h1 class="detail_title">農薬詳細</h1>
-                <a class="detail_back" href="./index.php">一覧へ戻る</a>
+                <div class="detail_header_top">
+                    <h1 class="detail_title">農薬詳細</h1>
+                    <div class="detail_header_actions">
+                        <a class="detail_back" href="<?php echo htmlspecialchars($backToSearchUrl, ENT_QUOTES, "UTF-8"); ?>">検索に戻る</a>
+                    </div>
+                </div>
+
+                <?php if ($currentFilters !== []): ?>
+                    <div class="current_filters_section detail_current_filters">
+                        <h2>現在の検索条件</h2>
+                        <div class="current_filters_list">
+                            <?php foreach ($currentFilters as $filter): ?>
+                                <div class="current_filter_item">
+                                    <span class="current_filter_label">
+                                        <?php echo htmlspecialchars((string)$filter["label"], ENT_QUOTES, "UTF-8"); ?>：
+                                    </span>
+                                    <span class="current_filter_value">
+                                        <?php echo htmlspecialchars((string)$filter["value"], ENT_QUOTES, "UTF-8"); ?>
+                                    </span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </header>
 
             <?php if ($pesticide === null): ?>
