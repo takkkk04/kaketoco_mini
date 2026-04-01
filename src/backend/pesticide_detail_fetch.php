@@ -9,6 +9,7 @@ require_once __DIR__ . "/db.php";
 $id = (int)($_GET["id"] ?? 0);
 $pesticide = null;
 $ruleRows = [];
+$ingredientRows = [];
 $errorMessage = "";
 
 if ($id <= 0) {
@@ -18,9 +19,27 @@ if ($id <= 0) {
 }
 
 $pesticideStmt = $pdo->prepare(
-    "SELECT id, name, registration_number
-     FROM pesticides
-     WHERE id = :id
+    "SELECT
+        p.id,
+        p.name,
+        p.registration_number,
+        p.category,
+        p.registered_on,
+        f.name AS formulation_name,
+        r.name AS registrant_name,
+        pea.quickly,
+        pea.systemic,
+        pea.translaminar,
+        pea.toxicity,
+        pea.shopify_id
+     FROM pesticides p
+     LEFT JOIN formulations f
+        ON f.id = p.formulation_id
+     LEFT JOIN registrants r
+        ON r.id = p.registrant_id
+     LEFT JOIN pesticide_extra_attributes pea
+        ON pea.registration_number = p.registration_number
+     WHERE p.id = :id
      LIMIT 1"
 );
 $pesticideStmt->bindValue(":id", $id, PDO::PARAM_INT);
@@ -54,3 +73,30 @@ $rulesStmt = $pdo->prepare(
 $rulesStmt->bindValue(":pesticide_id", $id, PDO::PARAM_INT);
 $rulesStmt->execute();
 $ruleRows = $rulesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$ingredientsStmt = $pdo->prepare(
+    "SELECT
+        i.id AS ingredient_id,
+        i.name AS ingredient_name,
+        pi.concentration_text AS concentration_text,
+        GROUP_CONCAT(
+            DISTINCT CASE
+                WHEN irl.rac_code IS NULL OR irl.rac_code = '' OR irl.rac_code = '-' THEN NULL
+                WHEN irl.rac_group IS NULL OR irl.rac_group = '' THEN irl.rac_code
+                ELSE CONCAT(irl.rac_group, ':', irl.rac_code)
+            END
+            ORDER BY irl.sort_order ASC, irl.id ASC
+            SEPARATOR ' / '
+        ) AS rac_text
+     FROM pesticide_ingredients pi
+     JOIN ingredients i
+        ON i.id = pi.ingredient_id
+     LEFT JOIN ingredient_rac_labels irl
+        ON irl.ingredient_id = i.id
+     WHERE pi.pesticide_id = :pesticide_id
+     GROUP BY pi.id, i.id, i.name, pi.concentration_text
+     ORDER BY pi.id ASC"
+);
+$ingredientsStmt->bindValue(":pesticide_id", $id, PDO::PARAM_INT);
+$ingredientsStmt->execute();
+$ingredientRows = $ingredientsStmt->fetchAll(PDO::FETCH_ASSOC);

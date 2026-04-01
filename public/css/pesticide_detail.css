@@ -3,7 +3,13 @@ body {
     color: #102030;
 }
 
+.detail_page,
+.detail_page * {
+    box-sizing: border-box;
+}
+
 .detail_main {
+    width: 100%;
     max-width: 1100px;
 }
 
@@ -52,6 +58,52 @@ body {
     border: 1px solid #d7e6f7;
     border-radius: 14px;
     padding: 14px;
+    box-shadow: 0 6px 18px rgba(10, 30, 60, 0.05);
+}
+
+.detail_top {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+}
+
+.detail_image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 320px;
+    background: #f8fbff;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.detail_product_name {
+    width: 100%;
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #102030;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.detail_image img {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+}
+
+.detail_summary {
+    width: 100%;
+    min-width: 0;
 }
 
 .detail_section_title {
@@ -60,36 +112,43 @@ body {
     color: #1f6feb;
 }
 
-.detail_info_grid {
-    margin: 0;
+.summary_list {
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
-.detail_info_item {
+.summary_row {
     display: grid;
-    grid-template-columns: 140px 1fr;
-    gap: 8px;
-    padding-bottom: 8px;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 10px;
+    padding-bottom: 10px;
     border-bottom: 1px solid #e5effb;
 }
 
-.detail_info_item:last-child {
+.summary_row:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }
 
-.detail_info_item dt {
-    margin: 0;
+.summary_label {
     color: #4a6075;
     font-size: 13px;
+    font-weight: 700;
 }
 
-.detail_info_item dd {
-    margin: 0;
+.summary_value {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     word-break: break-word;
+    line-height: 1.45;
+}
+
+.summary_value .rac_code {
+    margin-left: 6px;
+}
+
+.detail_rules {
+    margin-top: 2px;
 }
 
 .detail_error,
@@ -100,6 +159,8 @@ body {
 }
 
 .table_wrap {
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     border: 1px solid #d7e6f7;
     border-radius: 10px;
@@ -140,17 +201,132 @@ body {
 }
 
 @media (max-width: 899px) {
+    .detail_main {
+        padding: 12px;
+        padding-top: 77px;
+    }
+
     .detail_header {
         flex-direction: column;
         align-items: flex-start;
+        padding: 12px;
     }
 
     .detail_title {
         font-size: 20px;
     }
 
-    .detail_info_item {
+    .detail_back {
+        width: 100%;
+        min-height: 40px;
+    }
+
+    .detail_top {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .detail_image {
+        min-height: 220px;
+    }
+
+    .detail_card {
+        padding: 12px;
+    }
+
+    .summary_list {
+        gap: 10px;
+    }
+
+    .summary_row {
         grid-template-columns: 1fr;
         gap: 4px;
+        padding-bottom: 10px;
+    }
+
+    .summary_label {
+        font-size: 12px;
+    }
+
+    .summary_value {
+        font-size: 13px;
+    }
+
+    .summary_value .rac_code {
+        margin-left: 0;
+        margin-top: 6px;
+        display: inline-flex;
+    }
+
+    .detail_table {
+        min-width: 700px;
+    }
+
+    .detail_table thead th,
+    .detail_table tbody td {
+        font-size: 12px;
+        padding: 9px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .detail_main {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        padding-top: 72px;
+    }
+
+    .detail_page {
+        gap: 10px;
+    }
+
+    .detail_header,
+    .detail_card {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .detail_top {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .detail_image,
+    .detail_summary,
+    .detail_rules {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .detail_image {
+        min-height: 180px;
+        align-items: flex-start;
+    }
+
+    .detail_image img {
+        max-width: 100%;
+        width: 100%;
+        height: auto;
+    }
+
+    .detail_product_name {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .detail_title {
+        font-size: 18px;
+    }
+
+    .detail_section_title {
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+
+    .table_wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
