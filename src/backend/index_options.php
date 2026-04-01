@@ -84,8 +84,11 @@ $stmt = $pdo->prepare(
     "SELECT DISTINCT t.name
     FROM pesticide_rules pr
     JOIN targets t ON pr.target_id = t.id
-    WHERE pr.category = :category
+    WHERE (:category_any = '' OR pr.category = :category_filter)
     ORDER BY t.name ASC"
 );
-$stmt->execute([":category" => $category]);
+$stmt->execute([
+    ":category_any" => $category,
+    ":category_filter" => $category,
+]);
 $targetOptions = $stmt->fetchAll(PDO::FETCH_COLUMN);

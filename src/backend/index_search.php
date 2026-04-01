@@ -257,7 +257,7 @@ if ($hasSearchCondition) {
             p.id AS pesticide_id,
             p.registration_number AS registration_number,
             p.name AS name,
-            p.shopify_id AS shopify_id,
+            pea.shopify_id AS shopify_id,
             p.registered_on AS registered_on,
             p.mix_count AS mix_count,
             pr.magnification_text AS magnification,
@@ -265,9 +265,9 @@ if ($hasSearchCondition) {
             pr.times_text AS times,
             m.name AS method,
             NULL AS rac_code,
-            NULL AS quickly,
-            NULL AS systemic,
-            NULL AS translaminar,
+            pea.quickly AS quickly,
+            pea.systemic AS systemic,
+            pea.translaminar AS translaminar,
             COALESCE(stats.crop_count, 0) AS crop_count,
             COALESCE(stats.target_count, 0) AS target_count
         FROM (
@@ -281,6 +281,8 @@ if ($hasSearchCondition) {
             ON pr.id = picked.pick_id
         JOIN pesticides p
             ON p.id = pr.pesticide_id
+        LEFT JOIN pesticide_extra_attributes pea
+            ON pea.registration_number = p.registration_number
         LEFT JOIN methods m
             ON m.id = pr.method_id
         LEFT JOIN (
