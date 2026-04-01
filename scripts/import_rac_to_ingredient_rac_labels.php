@@ -9,8 +9,8 @@
 // 殺虫剤 20260330_rac_insecticide.csv (I)
 // 殺菌剤 20260330_rac_fungicide.csv (F)
 // 除草剤 20260330_rac_herbicide.csv (H)
-// 植調剤 20260330_rac_plant_growth_regulator.csv (I)
-// 殺そ剤 20260330_rac_rodenticide.csv (X)
+// 植調剤 20260330_rac_plant_growth_regulator.csv (X)
+// 殺そ剤 20260330_rac_rodenticide.csv (I)
 // ターミナル操作
 // SSHログイン
 // php scripts/import_rac_to_ingredient_rac_labels.php data/ファイル名.csv I <-最後の1文字はファイルによって変える
