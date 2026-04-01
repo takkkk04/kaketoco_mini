@@ -36,6 +36,31 @@ $BADGE_DEFS = [
     ], //速効性４以上を指定する
 ];
 
+$methodLabelMap = [];
+foreach ($methodLabels as $m) {
+    $methodLabelMap[(string)$m["value"]] = (string)$m["label"];
+}
+
+$currentFilters = [];
+if (trim((string)$keyword) !== "") {
+    $currentFilters[] = ["label" => "農薬名", "value" => (string)$keyword];
+}
+if (trim((string)$category) !== "") {
+    $currentFilters[] = ["label" => "カテゴリ", "value" => (string)$category];
+}
+if (trim((string)$crop) !== "") {
+    $currentFilters[] = ["label" => "作物", "value" => (string)$crop];
+}
+if (trim((string)$target) !== "") {
+    $currentFilters[] = ["label" => "病害虫", "value" => (string)$target];
+}
+if (trim((string)$method) !== "") {
+    $currentFilters[] = [
+        "label" => "使用方法",
+        "value" => (string)($methodLabelMap[$method] ?? $method),
+    ];
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -169,6 +194,28 @@ $BADGE_DEFS = [
 
             </form>
         </section>
+
+        <?php if ($hasSearchCondition): ?>
+        <section class="current_filters_section">
+            <h2>現在の検索条件</h2>
+            <?php if ($currentFilters === []): ?>
+                <p>条件指定なし</p>
+            <?php else: ?>
+                <div class="current_filters_list">
+                    <?php foreach ($currentFilters as $filter): ?>
+                        <div class="current_filter_item">
+                            <span class="current_filter_label">
+                                <?php echo htmlspecialchars((string)$filter["label"], ENT_QUOTES, "UTF-8"); ?>：
+                            </span>
+                            <span class="current_filter_value">
+                                <?php echo htmlspecialchars((string)$filter["value"], ENT_QUOTES, "UTF-8"); ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
+        <?php endif; ?>
 
         <?php if ($hasSearchCondition): ?>
         <section class="result_section">
