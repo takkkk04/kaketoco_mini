@@ -52,40 +52,7 @@ $BADGE_DEFS = [
 </head>
 
 <body>
-    <header class="app_header">
-        <h1 class="app_title">
-            <a href="./index.php">カケトコ mini</a>
-        </h1>
-
-        <!-- <a href="./user_create.php" class="register_btn">会員登録</a> -->
-        <?php if ($isLoggedIn): ?>
-            <div class="header_user">
-                <span class="user_name">
-                    <?= htmlspecialchars($userName, ENT_QUOTES, "UTF-8") ?>さん
-                </span>
-                <a href="./logout.php" class="logout_btn">ログアウト</a>
-            </div>
-        <?php else: ?>
-            <a href="./login.php" class="register_btn">ログイン</a>
-        <?php endif; ?>
-
-        <div class="header_menu">
-            <button type="button" id="menu_btn" class="menu_btn" aria-expanded="false" aria-controls="menu_panel">
-                <span class="menu_icon" aria-hidden="true"></span>
-                <span class="sr_only">メニュー</span>
-            </button>
-
-            <div id="menu_panel" class="menu_panel" hidden>
-                <a href="./admin/admin.php" class="menu_item">管理画面</a>
-                <?php if ($isLoggedIn): ?>
-                    <a href="./mypage.php" class="menu_item">マイページ</a>
-                    <a href="./logout.php" class="menu_item">ログアウト</a>
-                <?php else: ?>
-                    <a href="./login.php" class="menu_item">ログイン</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
+    <?php require __DIR__ . "/parts/header.php"; ?>
 
     <main class="app_main">
         <section class="search_section">
