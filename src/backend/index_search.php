@@ -7,11 +7,23 @@
 // +++++++++++++++++++++++++++++++++++++++++++++
 $category = $_GET["category"] ?? "";
 $keyword = trim($_GET["keyword"] ?? "");
-$crop = trim($_GET["crop"] ?? "");
+$cropValues = $_GET["crop"] ?? [];
+if (!is_array($cropValues)) {
+    $cropValues = $cropValues === "" ? [] : [$cropValues];
+}
+$crops = [];
+foreach ($cropValues as $cropValue) {
+    $cropName = trim((string)$cropValue);
+    if ($cropName === "") {
+        continue;
+    }
+    $crops[$cropName] = $cropName;
+}
+$crops = array_values($crops);
 $insect = trim($_GET["insect"] ?? "");
 $disease = trim($_GET["disease"] ?? "");
 $weed = trim($_GET["weed"] ?? "");
-$method = trim($_GET["method"] ?? "");
+$method = trim($_GET["method"] ?? "散布");
 $methodGroups = [
     "散布" => ["散布"],
     "全面土壌散布" => ["全面土壌散布"],
@@ -31,12 +43,13 @@ $methodGroups = [
     ]
 ];
 $methodLabels = [
-    ["value" => "", "label" => "指定なし"],
     ["value" => "散布", "label" => "散布"],
     ["value" => "灌注", "label" => "灌注"],
     ["value" => "ドローン散布", "label" => "ドローン散布"],
+    ["value" => "", "label" => "指定なし"],
 ];
 $sort = $_GET["sort"] ?? "score_desc";
+$isSearch = isset($_GET["is_search"]) && (string)$_GET["is_search"] === "1";
 
 // =============================================
 // 農薬名キーワード（スペース=OR, +=AND, -=除外）
@@ -106,11 +119,12 @@ if ($normalizedKeyword !== "") {
 $hasSearchCondition =
     ($category !== "") ||
     ($normalizedKeyword !== "") ||
-    ($crop !== "") ||
+    !empty($crops) ||
     ($insect !== "") ||
     ($disease !== "") ||
     ($weed !== "") ||
     ($method !== "");
+$shouldShowResults = $isSearch && $hasSearchCondition;
 
 // =============================================
 // 作物・病害虫・使用方法絞り込み処理
@@ -170,10 +184,8 @@ $perPage = 50;
 $page = max(1, (int)($_GET["page"] ?? 1));
 $totalPages = 0;
 
-if ($hasSearchCondition) {
+if ($shouldShowResults) {
     $pickedParams = [
-        ":crop1" => $crop,
-        ":crop2" => $crop,
         ":insect1" => $insect,
         ":insect2" => $insect,
         ":disease1" => $disease,
@@ -191,6 +203,25 @@ if ($hasSearchCondition) {
         $statsParams[":category_stats"] = $category;
     }
 
+    $cropWhereSql = "";
+    if (!empty($crops)) {
+        $cropPlaceholders = [];
+        foreach ($crops as $i => $cropName) {
+            $key = ":crop_and_{$i}";
+            $cropPlaceholders[] = $key;
+            $pickedParams[$key] = $cropName;
+        }
+        $pickedParams[":crop_and_count"] = count($crops);
+        $cropWhereSql = " AND p_main.id IN (
+            SELECT prc.pesticide_id
+            FROM pesticide_rules prc
+            JOIN crops cc ON cc.id = prc.crop_id
+            WHERE cc.name IN (" . implode(",", $cropPlaceholders) . ")
+            GROUP BY prc.pesticide_id
+            HAVING COUNT(DISTINCT cc.name) = :crop_and_count
+        )";
+    }
+
 // =============================================
 // 検索処理（条件組み立て + 総件数取得 + 20件ページネーション）
 // 条件あり時のみSQL実行し、COUNT(DISTINCT pesticide_id)で総件数を計算する
@@ -199,8 +230,6 @@ if ($hasSearchCondition) {
         "FROM pesticide_rules prf
         JOIN pesticides p_main
             ON p_main.id = prf.pesticide_id
-        LEFT JOIN crops cf
-            ON cf.id = prf.crop_id
         LEFT JOIN targets tf
             ON tf.id = prf.target_id
         LEFT JOIN methods mf
@@ -209,7 +238,7 @@ if ($hasSearchCondition) {
             p_main.hide_in_search = 0
             $pickedCategoryWhereSql
             $keywordWhereSql
-            AND (:crop1 = '' OR cf.name = :crop2)
+            $cropWhereSql
             AND (
                 :insect1 = ''
                 OR EXISTS (

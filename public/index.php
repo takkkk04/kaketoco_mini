@@ -48,8 +48,8 @@ if ($keyword !== "") {
 if ($category !== "") {
     $currentFilters["カテゴリ"] = $category;
 }
-if ($crop !== "") {
-    $currentFilters["作物"] = $crop;
+if (!empty($crops)) {
+    $currentFilters["作物"] = implode("、", $crops);
 }
 if ($insect !== "") {
     $currentFilters["害虫"] = $insect;
@@ -67,7 +67,25 @@ if ($method !== "") {
 $detailCarryParams = [];
 foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", "sort", "page"] as $key) {
     $value = $_GET[$key] ?? null;
-    if ($value === null || $value === "") {
+    if ($value === null) {
+        continue;
+    }
+    if (is_array($value)) {
+        $normalized = [];
+        foreach ($value as $item) {
+            $itemText = trim((string)$item);
+            if ($itemText === "") {
+                continue;
+            }
+            $normalized[] = $itemText;
+        }
+        if (empty($normalized)) {
+            continue;
+        }
+        $detailCarryParams[$key] = $normalized;
+        continue;
+    }
+    if ($value === "") {
         continue;
     }
     $detailCarryParams[$key] = (string)$value;
@@ -146,7 +164,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                 <div class="form_row">
                     <label for="crop">作物名</label>
                     <!-- キーワード検索 Select2(プルダウン内検索)-->
-                    <select name="crop" id="crop" class="js-select2">
+                    <select name="crop[]" id="crop" class="js-select2" multiple>
                         <option value="">指定なし</option>
                         <!-- 作物名プルダウン -->
                         <!-- カタカナ全角→半角処理 -->
@@ -156,7 +174,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                             <option value="<?php echo htmlspecialchars($dbValue, ENT_QUOTES, "UTF-8"); ?>"
                                 <?php
                                 // selectedがあると検索ボタン押しても選択状態になる
-                                echo ($crop === $dbValue) ? "selected" : ""; ?>>
+                                echo in_array($dbValue, $crops, true) ? "selected" : ""; ?>>
                                 <!-- <option>トマト</option>のトマトの部分 -->
                                 <?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>
                             </option>
@@ -228,6 +246,8 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                 <!-- ソートと繋ぐ役割 -->
                 <input type="hidden" name="sort" id="sort_hidden"
                     value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8") ?>">
+                <input type="hidden" name="is_search" id="is_search_hidden"
+                    value="<?php echo !empty($isSearch) ? "1" : ""; ?>">
 
             </form>
         </section>
@@ -246,7 +266,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
             </section>
         <?php endif; ?>
 
-        <?php if ($hasSearchCondition): ?>
+        <?php if (!empty($shouldShowResults)): ?>
         <section class="result_section">
 
             <div class="result_header">
@@ -283,7 +303,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                         $targetList = $targetListStmt->fetchAll(PDO::FETCH_COLUMN);
                         //カード内バッジ 浸透移行性、浸達性、速効性
                         $badges = buildBadges($p, $BADGE_DEFS);
-                        $showRuleSpecs = ($crop !== "");
+                        $showRuleSpecs = !empty($crops);
                         $mixCount = (int)($p["mix_count"] ?? 0);
                         ?>
 

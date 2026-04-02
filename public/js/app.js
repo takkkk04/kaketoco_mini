@@ -80,8 +80,13 @@ $(function () {
 // ソート変更したら即時並び替える処理
 // =============================================
 $(function () {
+    $("#search_btn").on("click", function () {
+        $("#is_search_hidden").val("1");
+    });
+
     $("#sort").on("change", function () {
         $("#sort_hidden").val(this.value);
+        $("#is_search_hidden").val("1");
         $("#search_form").submit();
     });
 });
@@ -90,9 +95,19 @@ $(function () {
 // 作物選択時は自動送信して候補を更新
 // =============================================
 $(function () {
-    $("#crop").on("change", function () {
-        const $form = $("#search_form");
-        if ($form.length === 0) return;
+    const $crop = $("#crop");
+    const $form = $("#search_form");
+    if ($crop.length === 0 || $form.length === 0) return;
+
+    let cropChanged = false;
+    $crop.on("change", function () {
+        cropChanged = true;
+    });
+
+    $crop.on("select2:close", function () {
+        if (!cropChanged) return;
+        cropChanged = false;
+        $("#is_search_hidden").val("");
         $form.submit();
     });
 });
