@@ -74,6 +74,16 @@ $(function () {
             return null;
         }
     });
+
+    // プルダウンを開いた直後、DOMが安定してから検索欄をクリアしてフォーカス
+    $(document).on('select2:open', function () {
+        setTimeout(function () {
+            const input = document.querySelector('.select2-container--open .select2-search__field');
+            if (!input) return;
+            input.value = '';
+            input.focus();
+        }, 0);
+    });
 });
 
 // =============================================
