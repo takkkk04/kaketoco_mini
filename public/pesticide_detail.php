@@ -94,7 +94,22 @@ $backUrl = "./index.php" . (!empty($backQuery) ? "?" . http_build_query($backQue
                                                     （<?php echo htmlspecialchars((string)$item["concentration"], ENT_QUOTES, "UTF-8"); ?>）
                                                 <?php endif; ?>
                                                 <?php if ((string)$item["rac"] !== ""): ?>
-                                                    <span class="rac_code">RAC:<?php echo htmlspecialchars((string)$item["rac"], ENT_QUOTES, "UTF-8"); ?></span>
+                                                    <?php
+                                                    $detailRacLabel = trim((string)$item["rac"]);
+                                                    $detailRacParts = explode(":", $detailRacLabel, 2);
+                                                    ?>
+                                                    <?php if (count($detailRacParts) === 2 && trim($detailRacParts[0]) !== "" && trim($detailRacParts[1]) !== ""): ?>
+                                                        <a
+                                                            class="rac_code"
+                                                            href="./rac_list.php?<?php echo htmlspecialchars(http_build_query([
+                                                                "group" => trim((string)$detailRacParts[0]),
+                                                                "code" => trim((string)$detailRacParts[1]),
+                                                            ]), ENT_QUOTES, "UTF-8"); ?>">
+                                                            RAC:<?php echo htmlspecialchars($detailRacLabel, ENT_QUOTES, "UTF-8"); ?>
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <span class="rac_code">RAC:<?php echo htmlspecialchars($detailRacLabel, ENT_QUOTES, "UTF-8"); ?></span>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endforeach; ?>

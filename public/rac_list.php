@@ -11,12 +11,32 @@ $code = trim((string)($_GET["code"] ?? ""));
 $rows = [];
 $errorMessage = "";
 
-$searchParamKeys = ["keyword", "category", "crop", "target", "method", "sort", "page"];
+$searchParamKeys = ["keyword", "category", "crop", "insect", "disease", "weed", "method", "sort", "page"];
 $searchParams = [];
 foreach ($searchParamKeys as $key) {
-    $value = trim((string)($_GET[$key] ?? ""));
-    if ($value !== "") {
-        $searchParams[$key] = $value;
+    $value = $_GET[$key] ?? null;
+    if ($value === null) {
+        continue;
+    }
+
+    if (is_array($value)) {
+        $normalized = [];
+        foreach ($value as $item) {
+            $itemText = trim((string)$item);
+            if ($itemText === "") {
+                continue;
+            }
+            $normalized[] = $itemText;
+        }
+        if ($normalized !== []) {
+            $searchParams[$key] = $normalized;
+        }
+        continue;
+    }
+
+    $valueText = trim((string)$value);
+    if ($valueText !== "") {
+        $searchParams[$key] = $valueText;
     }
 }
 $returnQuery = http_build_query($searchParams);

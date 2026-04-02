@@ -20,9 +20,12 @@ foreach ($cropValues as $cropValue) {
     $crops[$cropName] = $cropName;
 }
 $crops = array_values($crops);
-$insect = trim($_GET["insect"] ?? "");
-$disease = trim($_GET["disease"] ?? "");
-$weed = trim($_GET["weed"] ?? "");
+$insectRaw = $_GET["insect"] ?? "";
+$insect = trim((string)(is_array($insectRaw) ? ($insectRaw[0] ?? "") : $insectRaw));
+$diseaseRaw = $_GET["disease"] ?? "";
+$disease = trim((string)(is_array($diseaseRaw) ? ($diseaseRaw[0] ?? "") : $diseaseRaw));
+$weedRaw = $_GET["weed"] ?? "";
+$weed = trim((string)(is_array($weedRaw) ? ($weedRaw[0] ?? "") : $weedRaw));
 $method = trim($_GET["method"] ?? "散布");
 $methodGroups = [
     "散布" => ["散布"],

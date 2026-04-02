@@ -184,7 +184,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
 
                 <div class="form_row">
                     <label for="insect">害虫</label>
-                    <select name="insect" id="insect" class="js-select2">
+                    <select name="insect" id="insect" class="js-select2 js-select2-single-chip" multiple>
                         <option value="">指定なし</option>
                         <?php foreach ($insectOptions as $t): ?>
                             <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
@@ -197,7 +197,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
 
                 <div class="form_row">
                     <label for="disease">病害</label>
-                    <select name="disease" id="disease" class="js-select2">
+                    <select name="disease" id="disease" class="js-select2 js-select2-single-chip" multiple>
                         <option value="">指定なし</option>
                         <?php foreach ($diseaseOptions as $t): ?>
                             <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
@@ -210,7 +210,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
 
                 <div class="form_row">
                     <label for="weed">雑草</label>
-                    <select name="weed" id="weed" class="js-select2">
+                    <select name="weed" id="weed" class="js-select2 js-select2-single-chip" multiple>
                         <option value="">指定なし</option>
                         <?php foreach ($weedOptions as $t): ?>
                             <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
@@ -329,11 +329,31 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                                     <?php
                                     $pesticideId = (int)($p["pesticide_id"] ?? 0);
                                     $racText = (string)($racMap[$pesticideId] ?? "");
+                                    $racLabels = array_values(array_filter(array_map("trim", explode("/", $racText))));
                                     ?>
                                     <?php if ($racText !== ""): ?>
-                                        <span class="rac_code">
-                                            RAC:<?php echo htmlspecialchars($racText, ENT_QUOTES, "UTF-8"); ?>
-                                        </span>
+                                        <?php foreach ($racLabels as $racLabel): ?>
+                                            <?php
+                                            $parts = explode(":", $racLabel, 2);
+                                            $isRacLink = count($parts) === 2 && trim($parts[0]) !== "" && trim($parts[1]) !== "";
+                                            ?>
+                                            <?php if ($isRacLink): ?>
+                                                <?php
+                                                $racQuery = [
+                                                    "group" => trim((string)$parts[0]),
+                                                    "code" => trim((string)$parts[1]),
+                                                ] + $detailCarryParams;
+                                                $racUrl = "./rac_list.php?" . http_build_query($racQuery);
+                                                ?>
+                                                <a class="rac_code" href="<?php echo htmlspecialchars($racUrl, ENT_QUOTES, "UTF-8"); ?>">
+                                                    RAC:<?php echo htmlspecialchars($racLabel, ENT_QUOTES, "UTF-8"); ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="rac_code">
+                                                    RAC:<?php echo htmlspecialchars($racLabel, ENT_QUOTES, "UTF-8"); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
 
                                     <!-- お気に入りハート -->

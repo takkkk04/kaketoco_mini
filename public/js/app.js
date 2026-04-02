@@ -55,34 +55,49 @@ function normalizeJa(str) {
 }
 
 $(function () {
-    $('.js-select2').select2({
-        width: '100%',
-        placeholder: '指定なし',
-        allowClear: true,
-        matcher: function (params, data) {
-            if ($.trim(params.term) === "") {
-                return data;
-            }
-            if (!data.text) {
+    $(".js-select2").each(function () {
+        const $el = $(this);
+        const isSingleChip = $el.hasClass("js-select2-single-chip");
+
+        $el.select2({
+            width: "100%",
+            placeholder: "指定なし",
+            allowClear: true,
+            maximumSelectionLength: isSingleChip ? 1 : 0,
+            closeOnSelect: isSingleChip,
+            matcher: function (params, data) {
+                if ($.trim(params.term) === "") {
+                    return data;
+                }
+                if (!data.text) {
+                    return null;
+                }
+                const term = normalizeJa(params.term);
+                const text = normalizeJa(data.text);
+                if (text.indexOf(term) !== -1) {
+                    return data;
+                }
                 return null;
             }
-            const term = normalizeJa(params.term);
-            const text = normalizeJa(data.text);
-            if (text.indexOf(term) !== -1) {
-                return data;
-            }
-            return null;
-        }
+        });
     });
 
-    // プルダウンを開いた直後、DOMが安定してから検索欄をクリアしてフォーカス
-    $(document).on('select2:open', function () {
-        setTimeout(function () {
-            const input = document.querySelector('.select2-container--open .select2-search__field');
-            if (!input) return;
-            input.value = '';
-            input.focus();
-        }, 0);
+    // プルダウンを開いた直後、検索欄をクリアしてフォーカス（害虫/病害/雑草含む全Select2）
+    $(document).on("select2:open", function () {
+        const focusOpenSearchField = function () {
+            const fields = document.querySelectorAll(".select2-container--open .select2-search__field");
+            if (!fields || fields.length === 0) return;
+            const input = fields[fields.length - 1];
+            input.value = "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.focus({ preventScroll: true });
+            if (typeof input.setSelectionRange === "function") {
+                input.setSelectionRange(0, 0);
+            }
+        };
+
+        setTimeout(focusOpenSearchField, 0);
+        setTimeout(focusOpenSearchField, 30);
     });
 });
 
