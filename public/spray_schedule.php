@@ -1,4 +1,21 @@
 <?php
+// =============================================
+// 防除暦作成
+// =============================================
+// ■ 防除暦 ver.0.1 ルール
+
+// ・作物：トマト固定
+// ・カテゴリ：殺虫剤 / 殺菌剤のみ
+// ・使用方法：散布のみ
+// ・剤型：乳剤 / 水溶剤 / 水和剤 / 液剤のみ
+// ・pesticidesテーブル hide_in_search = 1 の農薬は除外
+// ・使用回数が NULL / 空 / '-' のものは除外
+// ・倍率に「原液」を含むものは除外
+// ・倍率は最小値のみ表示（例：2000~4000倍 → 2000倍）
+// ・RACコードが NULL / '-' のものは除外
+// ・RAC表示：殺虫剤は I:◯◯、殺菌剤は F:◯◯
+// ・各回：殺虫剤2種 + 殺菌剤1種をランダム選択
+// ・同一回で殺虫剤①と②は重複させない
 
 declare(strict_types=1);
 
@@ -73,16 +90,41 @@ $fetchCandidates = static function (PDO $pdo, string $category, string $cropName
             LEFT JOIN methods m2
                 ON m2.id = pr2.method_id
             WHERE p2.category = :category_pick
+              AND p2.hide_in_search = 0
               AND c2.name = :crop_name_pick
               AND m2.name = '散布'
+              AND pr2.magnification_text IS NOT NULL
+              AND pr2.magnification_text NOT LIKE '%原液%'
+              AND pr2.times_text IS NOT NULL
+              AND pr2.times_text <> ''
+              AND pr2.times_text <> '-'
               AND f2.name IN (" . implode(",", $formulationPickPlaceholders) . ")
+              AND EXISTS (
+                    SELECT 1
+                    FROM pesticide_ingredients pi3
+                    JOIN ingredient_rac_labels irl3
+                        ON irl3.ingredient_id = pi3.ingredient_id
+                    WHERE pi3.pesticide_id = p2.id
+                      AND irl3.rac_code IS NOT NULL
+                      AND irl3.rac_code <> ''
+                      AND irl3.rac_code <> '-'
+              )
             GROUP BY p2.id
         ) picked
             ON picked.pesticide_id = p.id
            AND picked.rule_id = pr.id
         WHERE p.category = :category
+          AND p.hide_in_search = 0
           AND c.name = :crop_name
           AND m.name = '散布'
+          AND pr.magnification_text IS NOT NULL
+          AND pr.magnification_text NOT LIKE '%原液%'
+          AND pr.times_text IS NOT NULL
+          AND pr.times_text <> ''
+          AND pr.times_text <> '-'
+          AND rac.rac_label IS NOT NULL
+          AND rac.rac_label <> ''
+          AND rac.rac_label <> '-'
           AND f.name IN (" . implode(",", $formulationOuterPlaceholders) . ")
         ORDER BY p.name ASC"
     );
@@ -145,6 +187,19 @@ $formatRuleValue = static function (?array $pesticide, string $key): string {
     return $value === "" ? "-" : $value;
 };
 
+$formatTimes = static function (?array $pesticide): string {
+    if ($pesticide === null) {
+        return "-";
+    }
+
+    $value = trim((string)($pesticide["times_text"] ?? ""));
+    if ($value === "") {
+        return "-";
+    }
+
+    return trim(str_replace("以内", "", $value));
+};
+
 $formatRac = static function (?array $pesticide): string {
     if ($pesticide === null) {
         return "-";
@@ -205,17 +260,17 @@ $formatMagnification = static function (?array $pesticide): string {
                         <tr>
                             <th>日程</th>
                             <th>殺虫剤①</th>
-                            <th>RAC①</th>
-                            <th>倍率①</th>
-                            <th>回数①</th>
+                            <th>RAC</th>
+                            <th>倍率</th>
+                            <th>回数</th>
                             <th>殺虫剤②</th>
-                            <th>RAC②</th>
-                            <th>倍率②</th>
-                            <th>回数②</th>
+                            <th>RAC</th>
+                            <th>倍率</th>
+                            <th>回数</th>
                             <th>殺菌剤</th>
-                            <th>RAC（殺菌剤）</th>
-                            <th>倍率（殺菌剤）</th>
-                            <th>回数（殺菌剤）</th>
+                            <th>RAC</th>
+                            <th>倍率</th>
+                            <th>回数</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -225,15 +280,15 @@ $formatMagnification = static function (?array $pesticide): string {
                                 <td><?php echo htmlspecialchars($formatPesticideName($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatRac($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatMagnification($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatRuleValue($row["insecticide_1"], "times_text"), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars($formatTimes($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatPesticideName($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatRac($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatMagnification($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatRuleValue($row["insecticide_2"], "times_text"), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars($formatTimes($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatPesticideName($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatRac($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatMagnification($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatRuleValue($row["fungicide"], "times_text"), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars($formatTimes($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
