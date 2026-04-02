@@ -1,0 +1,71 @@
+.rac_list_main {
+    max-width: 1100px;
+}
+
+.rac_list_section {
+    display: grid;
+    gap: 12px;
+}
+
+.rac_heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 12px;
+}
+
+.rac_heading_left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rac_heading_title {
+    margin: 0;
+    font-size: 18px;
+    color: #1f6feb;
+    font-weight: 700;
+}
+
+.rac_back_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+    background: #ffffff;
+    color: #1f6feb;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.rac_back_btn:hover {
+    background: #e6f2ff;
+}
+
+@media (max-width: 768px) {
+    .rac_heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .rac_heading_left {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .rac_heading_title {
+        font-size: 16px;
+    }
+
+    .rac_back_btn {
+        width: 100%;
+    }
+}
