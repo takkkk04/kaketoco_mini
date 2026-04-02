@@ -14,8 +14,12 @@
 // ・倍率は最小値のみ表示（例：2000~4000倍 → 2000倍）
 // ・RACコードが NULL / '-' のものは除外
 // ・RAC表示：殺虫剤は I:◯◯、殺菌剤は F:◯◯
+// ・同じRACは使用後3回空ける（次に使えるのは4回後）
 // ・各回：殺虫剤2種 + 殺菌剤1種をランダム選択
-// ・同一回で殺虫剤①と②は重複させない
+// ・同一回で殺虫剤①と②は同じ農薬を使わない
+// ・同一回で殺虫剤①と②は同じRACを使わない
+// ・使用回数は「現在回数/上限回数回」で表示する（例：1/3回）
+// ・上限回数に達した農薬は以後の候補から除外する
 
 declare(strict_types=1);
 
@@ -153,13 +157,200 @@ $pickRandomTwoDistinct = static function (array $candidates): array {
     return [$candidates[$indexes[0]], $candidates[$indexes[1]]];
 };
 
+$getRacKey = static function (?array $candidate): ?string {
+    if ($candidate === null) {
+        return null;
+    }
+
+    $racKey = trim((string)($candidate["rac_label"] ?? ""));
+    return ($racKey === "" || $racKey === "-") ? null : $racKey;
+};
+
+$filterByRacRotation = static function (
+    array $candidates,
+    array $history,
+    int $currentRound
+) use ($getRacKey): array {
+    $filtered = [];
+
+    foreach ($candidates as $candidate) {
+        $racKey = $getRacKey($candidate);
+        if ($racKey === null) {
+            continue;
+        }
+
+        $lastUsedRound = $history[$racKey] ?? null;
+        if ($lastUsedRound === null || ($currentRound - (int)$lastUsedRound) >= 4) {
+            $filtered[] = $candidate;
+        }
+    }
+
+    return $filtered;
+};
+
+$parseMaxUsageCount = static function (?string $value): ?int {
+    $text = trim((string)$value);
+    if ($text === "") {
+        return null;
+    }
+
+    if (preg_match('/(\d+)/u', $text, $matches) !== 1) {
+        return null;
+    }
+
+    return (int)$matches[1];
+};
+
+$filterByUsageLimit = static function (
+    array $candidates,
+    array $usageHistory
+) use ($parseMaxUsageCount): array {
+    $filtered = [];
+
+    foreach ($candidates as $candidate) {
+        $pesticideId = (int)($candidate["id"] ?? 0);
+        if ($pesticideId <= 0) {
+            continue;
+        }
+
+        $maxCount = $parseMaxUsageCount((string)($candidate["times_text"] ?? ""));
+        if ($maxCount === null) {
+            $filtered[] = $candidate;
+            continue;
+        }
+
+        $usedCount = (int)($usageHistory[$pesticideId] ?? 0);
+        if ($usedCount < $maxCount) {
+            $filtered[] = $candidate;
+        }
+    }
+
+    return $filtered;
+};
+
+$filterByDifferentRac = static function (
+    array $candidates,
+    string $excludeRacKey
+) use ($getRacKey): array {
+    $filtered = [];
+
+    foreach ($candidates as $candidate) {
+        $racKey = $getRacKey($candidate);
+        if ($racKey === null || $racKey === $excludeRacKey) {
+            continue;
+        }
+        $filtered[] = $candidate;
+    }
+
+    return $filtered;
+};
+
+$filterByDifferentPesticide = static function (array $candidates, int $excludePesticideId): array {
+    $filtered = [];
+
+    foreach ($candidates as $candidate) {
+        $pesticideId = (int)($candidate["id"] ?? 0);
+        if ($pesticideId <= 0 || $pesticideId === $excludePesticideId) {
+            continue;
+        }
+        $filtered[] = $candidate;
+    }
+
+    return $filtered;
+};
+
+$buildUsageLabel = static function (
+    ?array $candidate,
+    array $usageHistory
+) use ($parseMaxUsageCount): string {
+    if ($candidate === null) {
+        return "-";
+    }
+
+    $pesticideId = (int)($candidate["id"] ?? 0);
+    $maxCount = $parseMaxUsageCount((string)($candidate["times_text"] ?? ""));
+    $usedCount = (int)($usageHistory[$pesticideId] ?? 0);
+
+    if ($pesticideId <= 0 || $maxCount === null || $usedCount <= 0) {
+        return "-";
+    }
+
+    return $usedCount . "/" . $maxCount . "回";
+};
+
 $insecticideCandidates = $fetchCandidates($pdo, "殺虫剤", $targetCrop, $allowedFormulationNames);
 $fungicideCandidates = $fetchCandidates($pdo, "殺菌剤", $targetCrop, $allowedFormulationNames);
 
+$racHistory = [
+    "insecticide" => [],
+    "fungicide" => [],
+];
+$usageHistory = [];
+
 $scheduleRows = [];
 for ($i = 1; $i <= $scheduleCount; $i++) {
-    [$insecticide1, $insecticide2] = $pickRandomTwoDistinct($insecticideCandidates);
-    $fungicide = $pickRandomOne($fungicideCandidates);
+    $availableInsecticides = $filterByRacRotation($insecticideCandidates, $racHistory["insecticide"], $i);
+    if ($availableInsecticides === []) {
+        $availableInsecticides = $insecticideCandidates;
+    }
+    $availableInsecticides = $filterByUsageLimit($availableInsecticides, $usageHistory);
+    if ($availableInsecticides === []) {
+        $availableInsecticides = $filterByUsageLimit($insecticideCandidates, $usageHistory);
+    }
+
+    $availableFungicides = $filterByRacRotation($fungicideCandidates, $racHistory["fungicide"], $i);
+    if ($availableFungicides === []) {
+        $availableFungicides = $fungicideCandidates;
+    }
+    $availableFungicides = $filterByUsageLimit($availableFungicides, $usageHistory);
+    if ($availableFungicides === []) {
+        $availableFungicides = $filterByUsageLimit($fungicideCandidates, $usageHistory);
+    }
+
+    $insecticide1 = $pickRandomOne($availableInsecticides);
+    $insecticide1Id = (int)($insecticide1["id"] ?? 0);
+    $insecticide1Rac = $getRacKey($insecticide1);
+
+    $availableInsecticide2 = $availableInsecticides;
+    if ($insecticide1Id > 0) {
+        $availableInsecticide2 = $filterByDifferentPesticide($availableInsecticide2, $insecticide1Id);
+    }
+    if ($insecticide1Rac !== null) {
+        $differentRacCandidates = $filterByDifferentRac($availableInsecticide2, $insecticide1Rac);
+        if ($differentRacCandidates !== []) {
+            $availableInsecticide2 = $differentRacCandidates;
+        }
+    }
+    if ($availableInsecticide2 === [] && $insecticide1Id > 0) {
+        $availableInsecticide2 = $filterByDifferentPesticide($availableInsecticides, $insecticide1Id);
+    }
+
+    $insecticide2 = $pickRandomOne($availableInsecticide2);
+    $fungicide = $pickRandomOne($availableFungicides);
+
+    $selectedPesticides = [$insecticide1, $insecticide2, $fungicide];
+    foreach ($selectedPesticides as $selectedPesticide) {
+        $pesticideId = (int)($selectedPesticide["id"] ?? 0);
+        if ($pesticideId <= 0) {
+            continue;
+        }
+        $usageHistory[$pesticideId] = (int)($usageHistory[$pesticideId] ?? 0) + 1;
+    }
+
+    $insecticideRac1 = $getRacKey($insecticide1);
+    if ($insecticideRac1 !== null) {
+        $racHistory["insecticide"][$insecticideRac1] = $i;
+    }
+
+    $insecticideRac2 = $getRacKey($insecticide2);
+    if ($insecticideRac2 !== null) {
+        $racHistory["insecticide"][$insecticideRac2] = $i;
+    }
+
+    $fungicideRac = $getRacKey($fungicide);
+    if ($fungicideRac !== null) {
+        $racHistory["fungicide"][$fungicideRac] = $i;
+    }
 
     $scheduleRows[] = [
         "round" => $i,
@@ -167,7 +358,9 @@ for ($i = 1; $i <= $scheduleCount; $i++) {
         "insecticide_1" => $insecticide1,
         "insecticide_2" => $insecticide2,
         "fungicide" => $fungicide,
-        "memo" => "",
+        "usage_label_1" => $buildUsageLabel($insecticide1, $usageHistory),
+        "usage_label_2" => $buildUsageLabel($insecticide2, $usageHistory),
+        "usage_label_3" => $buildUsageLabel($fungicide, $usageHistory),
     ];
 }
 
@@ -280,15 +473,15 @@ $formatMagnification = static function (?array $pesticide): string {
                                 <td><?php echo htmlspecialchars($formatPesticideName($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatRac($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatMagnification($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatTimes($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)($row["usage_label_1"] ?? "-"), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatPesticideName($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatRac($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatMagnification($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatTimes($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)($row["usage_label_2"] ?? "-"), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatPesticideName($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatRac($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
                                 <td><?php echo htmlspecialchars($formatMagnification($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatTimes($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)($row["usage_label_3"] ?? "-"), ENT_QUOTES, "UTF-8"); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
