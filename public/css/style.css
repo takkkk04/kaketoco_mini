@@ -385,6 +385,54 @@ select option {
     padding: 0 8px;
 }
 
+/* 複数選択（作物） */
+.select2-container--default .select2-selection--multiple {
+    box-sizing: border-box;
+    min-height: 40px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 4px 6px;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #1f6feb;
+    box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12);
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    border: 1px solid #dce9f9;
+    background: #f8fbff;
+    color: #102030;
+    border-radius: 999px;
+    padding: 6px 10px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1;
+    font-weight: 600;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #3f5875;
+    margin-right: 6px;
+    border-right: 0;
+    font-weight: 700;
+}
+
+.select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+    margin-top: 0;
+    margin-left: 0;
+    font-size: 14px;
+}
+
 /* 選択中テキスト（デフォのpadding/line-heightがズレ原因になりがち） */
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding: 0;
@@ -1022,6 +1070,47 @@ select option {
     border-color: #ff7f24;
 }
 
+.current_filters_section {
+    margin: 18px 0;
+    padding: 16px;
+    border: 1px solid #d7e6f7;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.current_filters_section h2 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #102030;
+}
+
+.current_filters_list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.current_filter_item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1px solid #dce9f9;
+    border-radius: 999px;
+    background: #f8fbff;
+    font-size: 13px;
+}
+
+.current_filter_label {
+    color: #3f5875;
+}
+
+.current_filter_value {
+    color: #102030;
+    font-weight: 600;
+}
+
 /* ========================================
 レスポンシブ対応
 ======================================== */
@@ -1056,5 +1145,14 @@ select option {
         height: 34px;
         padding: 0 10px;
         font-size: 13px;
+    }
+
+    .current_filters_section {
+        margin: 14px 0;
+        padding: 12px;
+    }
+
+    .current_filters_section h2 {
+        font-size: 16px;
     }
 }

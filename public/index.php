@@ -37,41 +37,59 @@ $BADGE_DEFS = [
 ];
 
 $methodLabelMap = [];
-foreach ($methodLabels as $m) {
-    $methodLabelMap[(string)$m["value"]] = (string)$m["label"];
+foreach ($methodLabels as $methodLabel) {
+    $methodLabelMap[(string)($methodLabel["value"] ?? "")] = (string)($methodLabel["label"] ?? "");
 }
 
 $currentFilters = [];
-if (trim((string)$keyword) !== "") {
-    $currentFilters[] = ["label" => "農薬名", "value" => (string)$keyword];
+if ($keyword !== "") {
+    $currentFilters["農薬名"] = $keyword;
 }
-if (trim((string)$category) !== "") {
-    $currentFilters[] = ["label" => "カテゴリ", "value" => (string)$category];
+if ($category !== "") {
+    $currentFilters["カテゴリ"] = $category;
 }
-if (trim((string)$crop) !== "") {
-    $currentFilters[] = ["label" => "作物", "value" => (string)$crop];
+if (!empty($crops)) {
+    $currentFilters["作物"] = implode("、", $crops);
 }
-if (trim((string)$target) !== "") {
-    $currentFilters[] = ["label" => "病害虫", "value" => (string)$target];
+if ($insect !== "") {
+    $currentFilters["害虫"] = $insect;
 }
-if (trim((string)$method) !== "") {
-    $currentFilters[] = [
-        "label" => "使用方法",
-        "value" => (string)($methodLabelMap[$method] ?? $method),
-    ];
+if ($disease !== "") {
+    $currentFilters["病害"] = $disease;
+}
+if ($weed !== "") {
+    $currentFilters["雑草"] = $weed;
+}
+if ($method !== "") {
+    $currentFilters["使用方法"] = $methodLabelMap[$method] ?? $method;
 }
 
-$detailCarryParams = [
-    "keyword" => (string)$keyword,
-    "category" => (string)$category,
-    "crop" => (string)$crop,
-    "target" => (string)$target,
-    "method" => (string)$method,
-    "sort" => (string)$sort,
-    "page" => (string)$page,
-];
-$detailCarryQuery = http_build_query($detailCarryParams);
-$racCarryQuery = $detailCarryQuery;
+$detailCarryParams = [];
+foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", "sort", "page"] as $key) {
+    $value = $_GET[$key] ?? null;
+    if ($value === null) {
+        continue;
+    }
+    if (is_array($value)) {
+        $normalized = [];
+        foreach ($value as $item) {
+            $itemText = trim((string)$item);
+            if ($itemText === "") {
+                continue;
+            }
+            $normalized[] = $itemText;
+        }
+        if (empty($normalized)) {
+            continue;
+        }
+        $detailCarryParams[$key] = $normalized;
+        continue;
+    }
+    if ($value === "") {
+        continue;
+    }
+    $detailCarryParams[$key] = (string)$value;
+}
 
 ?>
 
@@ -146,7 +164,7 @@ $racCarryQuery = $detailCarryQuery;
                 <div class="form_row">
                     <label for="crop">作物名</label>
                     <!-- キーワード検索 Select2(プルダウン内検索)-->
-                    <select name="crop" id="crop" class="js-select2">
+                    <select name="crop[]" id="crop" class="js-select2" multiple>
                         <option value="">指定なし</option>
                         <!-- 作物名プルダウン -->
                         <!-- カタカナ全角→半角処理 -->
@@ -156,7 +174,7 @@ $racCarryQuery = $detailCarryQuery;
                             <option value="<?php echo htmlspecialchars($dbValue, ENT_QUOTES, "UTF-8"); ?>"
                                 <?php
                                 // selectedがあると検索ボタン押しても選択状態になる
-                                echo ($crop === $dbValue) ? "selected" : ""; ?>>
+                                echo in_array($dbValue, $crops, true) ? "selected" : ""; ?>>
                                 <!-- <option>トマト</option>のトマトの部分 -->
                                 <?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>
                             </option>
@@ -165,13 +183,38 @@ $racCarryQuery = $detailCarryQuery;
                 </div>
 
                 <div class="form_row">
-                    <label for="target">病害虫</label>
-                    <select name="target" id="target" class="js-select2">
+                    <label for="insect">害虫</label>
+                    <select name="insect" id="insect" class="js-select2">
                         <option value="">指定なし</option>
-                        <!-- 病害虫プルダウン -->
-                        <?php foreach ($targetOptions as $t): ?>
+                        <?php foreach ($insectOptions as $t): ?>
                             <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php echo ($target === $t) ? "selected" : ""; ?>>
+                                <?php echo ($insect === $t) ? "selected" : ""; ?>>
+                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form_row">
+                    <label for="disease">病害</label>
+                    <select name="disease" id="disease" class="js-select2">
+                        <option value="">指定なし</option>
+                        <?php foreach ($diseaseOptions as $t): ?>
+                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                <?php echo ($disease === $t) ? "selected" : ""; ?>>
+                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form_row">
+                    <label for="weed">雑草</label>
+                    <select name="weed" id="weed" class="js-select2">
+                        <option value="">指定なし</option>
+                        <?php foreach ($weedOptions as $t): ?>
+                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                <?php echo ($weed === $t) ? "selected" : ""; ?>>
                                 <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
                             </option>
                         <?php endforeach; ?>
@@ -203,33 +246,27 @@ $racCarryQuery = $detailCarryQuery;
                 <!-- ソートと繋ぐ役割 -->
                 <input type="hidden" name="sort" id="sort_hidden"
                     value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8") ?>">
+                <input type="hidden" name="is_search" id="is_search_hidden"
+                    value="<?php echo !empty($isSearch) ? "1" : ""; ?>">
 
             </form>
         </section>
 
-        <?php if ($hasSearchCondition): ?>
-        <section class="current_filters_section">
-            <h2>現在の検索条件</h2>
-            <?php if ($currentFilters === []): ?>
-                <p>条件指定なし</p>
-            <?php else: ?>
+        <?php if ($hasSearchCondition && !empty($currentFilters)): ?>
+            <section class="current_filters_section">
+                <h2>現在の検索条件</h2>
                 <div class="current_filters_list">
-                    <?php foreach ($currentFilters as $filter): ?>
+                    <?php foreach ($currentFilters as $label => $value): ?>
                         <div class="current_filter_item">
-                            <span class="current_filter_label">
-                                <?php echo htmlspecialchars((string)$filter["label"], ENT_QUOTES, "UTF-8"); ?>：
-                            </span>
-                            <span class="current_filter_value">
-                                <?php echo htmlspecialchars((string)$filter["value"], ENT_QUOTES, "UTF-8"); ?>
-                            </span>
+                            <span class="current_filter_label"><?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>：</span>
+                            <span class="current_filter_value"><?php echo htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8"); ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
-        </section>
+            </section>
         <?php endif; ?>
 
-        <?php if ($hasSearchCondition): ?>
+        <?php if (!empty($shouldShowResults)): ?>
         <section class="result_section">
 
             <div class="result_header">
@@ -266,7 +303,7 @@ $racCarryQuery = $detailCarryQuery;
                         $targetList = $targetListStmt->fetchAll(PDO::FETCH_COLUMN);
                         //カード内バッジ 浸透移行性、浸達性、速効性
                         $badges = buildBadges($p, $BADGE_DEFS);
-                        $showRuleSpecs = ($crop !== "");
+                        $showRuleSpecs = !empty($crops);
                         $mixCount = (int)($p["mix_count"] ?? 0);
                         ?>
 
@@ -274,7 +311,11 @@ $racCarryQuery = $detailCarryQuery;
                             <div class="card_title">
                                 <!-- 商品名 -->
                                 <span class="card_title_name">
-                                    <a href="./pesticide_detail.php?id=<?php echo (int)($p["pesticide_id"] ?? 0); ?><?php echo $detailCarryQuery !== "" ? "&" . htmlspecialchars($detailCarryQuery, ENT_QUOTES, "UTF-8") : ""; ?>">
+                                    <?php
+                                    $detailQuery = ["id" => (int)($p["pesticide_id"] ?? 0)] + $detailCarryParams;
+                                    $detailUrl = "./pesticide_detail.php?" . http_build_query($detailQuery);
+                                    ?>
+                                    <a href="<?php echo htmlspecialchars($detailUrl, ENT_QUOTES, "UTF-8"); ?>">
                                         <?php echo htmlspecialchars(
                                             mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"),
                                             ENT_QUOTES,
@@ -290,25 +331,9 @@ $racCarryQuery = $detailCarryQuery;
                                     $racText = (string)($racMap[$pesticideId] ?? "");
                                     ?>
                                     <?php if ($racText !== ""): ?>
-                                        <?php
-                                        $racParts = array_filter(array_map("trim", explode(" / ", $racText)));
-                                        foreach ($racParts as $racPart):
-                                            $pair = explode(":", $racPart, 2);
-                                            if (count($pair) === 2 && $pair[0] !== "" && $pair[1] !== ""):
-                                                $racUrl = "./rac_list.php?group=" . urlencode($pair[0]) . "&code=" . urlencode($pair[1]);
-                                                if ($racCarryQuery !== "") {
-                                                    $racUrl .= "&" . $racCarryQuery;
-                                                }
-                                        ?>
-                                                <a class="rac_code" href="<?php echo htmlspecialchars($racUrl, ENT_QUOTES, "UTF-8"); ?>">
-                                                    RAC:<?php echo htmlspecialchars($racPart, ENT_QUOTES, "UTF-8"); ?>
-                                                </a>
-                                            <?php else: ?>
-                                                <span class="rac_code">
-                                                    RAC:<?php echo htmlspecialchars($racPart, ENT_QUOTES, "UTF-8"); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        <?php endforeach; ?>
+                                        <span class="rac_code">
+                                            RAC:<?php echo htmlspecialchars($racText, ENT_QUOTES, "UTF-8"); ?>
+                                        </span>
                                     <?php endif; ?>
 
                                     <!-- お気に入りハート -->

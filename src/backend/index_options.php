@@ -79,16 +79,38 @@ foreach ($quickCropLabels as $label) {
     $cropOptions[$label] = $dbValue;
 }
 
-//病害虫プルダウン(DB自動取得)
-$stmt = $pdo->prepare(
-    "SELECT DISTINCT t.name
-    FROM pesticide_rules pr
-    JOIN targets t ON pr.target_id = t.id
-    WHERE (:category_any = '' OR pr.category = :category_filter)
-    ORDER BY t.name ASC"
-);
-$stmt->execute([
-    ":category_any" => $category,
-    ":category_filter" => $category,
-]);
-$targetOptions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+// 害虫・病害・雑草プルダウン(DB自動取得)
+$loadTargetOptions = static function (PDO $pdo, string $targetType, string $category, array $crops): array {
+    $sql = "SELECT DISTINCT t.name
+        FROM pesticide_rules pr
+        JOIN targets t ON pr.target_id = t.id
+        LEFT JOIN crops c ON pr.crop_id = c.id
+        WHERE t.target_type = :target_type
+          AND t.name <> '-'
+          AND (:category_any = '' OR pr.category = :category_filter)";
+    $params = [
+        ":target_type" => $targetType,
+        ":category_any" => $category,
+        ":category_filter" => $category,
+    ];
+
+    if (!empty($crops)) {
+        $placeholders = [];
+        foreach (array_values($crops) as $i => $cropName) {
+            $key = ":crop_{$i}";
+            $placeholders[] = $key;
+            $params[$key] = $cropName;
+        }
+        $sql .= " AND c.name IN (" . implode(",", $placeholders) . ")";
+    }
+
+    $sql .= " ORDER BY t.name ASC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+};
+
+$insectOptions = $loadTargetOptions($pdo, "害虫", $category, $crops);
+$diseaseOptions = $loadTargetOptions($pdo, "病害", $category, $crops);
+$weedOptions = $loadTargetOptions($pdo, "雑草", $category, $crops);
