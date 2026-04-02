@@ -84,21 +84,25 @@ $targetTypeStmt = $pdo->prepare(
     "SELECT DISTINCT t.name
     FROM pesticide_rules pr
     JOIN targets t ON pr.target_id = t.id
+    LEFT JOIN crops c ON pr.crop_id = c.id
     WHERE t.target_type = :target_type
       AND t.name <> '-'
       AND (:category_any = '' OR pr.category = :category_filter)
+      AND (:crop_any = '' OR c.name = :crop_filter)
     ORDER BY t.name ASC"
 );
 
-$loadTargetOptions = static function (PDOStatement $stmt, string $targetType, string $category): array {
+$loadTargetOptions = static function (PDOStatement $stmt, string $targetType, string $category, string $crop): array {
     $stmt->execute([
         ":target_type" => $targetType,
         ":category_any" => $category,
         ":category_filter" => $category,
+        ":crop_any" => $crop,
+        ":crop_filter" => $crop,
     ]);
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 };
 
-$insectOptions = $loadTargetOptions($targetTypeStmt, "害虫", $category);
-$diseaseOptions = $loadTargetOptions($targetTypeStmt, "病害", $category);
-$weedOptions = $loadTargetOptions($targetTypeStmt, "雑草", $category);
+$insectOptions = $loadTargetOptions($targetTypeStmt, "害虫", $category, $crop);
+$diseaseOptions = $loadTargetOptions($targetTypeStmt, "病害", $category, $crop);
+$weedOptions = $loadTargetOptions($targetTypeStmt, "雑草", $category, $crop);
