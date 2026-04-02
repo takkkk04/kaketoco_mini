@@ -8,7 +8,9 @@
 $category = $_GET["category"] ?? "";
 $keyword = trim($_GET["keyword"] ?? "");
 $crop = trim($_GET["crop"] ?? "");
-$target = trim($_GET["target"] ?? "");
+$insect = trim($_GET["insect"] ?? "");
+$disease = trim($_GET["disease"] ?? "");
+$weed = trim($_GET["weed"] ?? "");
 $method = trim($_GET["method"] ?? "");
 $methodGroups = [
     "散布" => ["散布"],
@@ -105,7 +107,9 @@ $hasSearchCondition =
     ($category !== "") ||
     ($normalizedKeyword !== "") ||
     ($crop !== "") ||
-    ($target !== "") ||
+    ($insect !== "") ||
+    ($disease !== "") ||
+    ($weed !== "") ||
     ($method !== "");
 
 // =============================================
@@ -170,8 +174,12 @@ if ($hasSearchCondition) {
     $pickedParams = [
         ":crop1" => $crop,
         ":crop2" => $crop,
-        ":target1" => $target,
-        ":target2" => $target,
+        ":insect1" => $insect,
+        ":insect2" => $insect,
+        ":disease1" => $disease,
+        ":disease2" => $disease,
+        ":weed1" => $weed,
+        ":weed2" => $weed,
     ];
     $statsParams = [];
     $pickedCategoryWhereSql = "";
@@ -202,7 +210,39 @@ if ($hasSearchCondition) {
             $pickedCategoryWhereSql
             $keywordWhereSql
             AND (:crop1 = '' OR cf.name = :crop2)
-            AND (:target1 = '' OR tf.name = :target2)
+            AND (
+                :insect1 = ''
+                OR EXISTS (
+                    SELECT 1
+                    FROM pesticide_rules pr_i
+                    JOIN targets t_i ON t_i.id = pr_i.target_id
+                    WHERE pr_i.pesticide_id = prf.pesticide_id
+                      AND t_i.target_type = '害虫'
+                      AND t_i.name = :insect2
+                )
+            )
+            AND (
+                :disease1 = ''
+                OR EXISTS (
+                    SELECT 1
+                    FROM pesticide_rules pr_d
+                    JOIN targets t_d ON t_d.id = pr_d.target_id
+                    WHERE pr_d.pesticide_id = prf.pesticide_id
+                      AND t_d.target_type = '病害'
+                      AND t_d.name = :disease2
+                )
+            )
+            AND (
+                :weed1 = ''
+                OR EXISTS (
+                    SELECT 1
+                    FROM pesticide_rules pr_w
+                    JOIN targets t_w ON t_w.id = pr_w.target_id
+                    WHERE pr_w.pesticide_id = prf.pesticide_id
+                      AND t_w.target_type = '雑草'
+                      AND t_w.name = :weed2
+                )
+            )
             $methodWhereSql";
 
     $countParams = $pickedParams + $methodParams + $keywordParams;

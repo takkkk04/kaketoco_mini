@@ -36,6 +36,43 @@ $BADGE_DEFS = [
     ], //速効性４以上を指定する
 ];
 
+$methodLabelMap = [];
+foreach ($methodLabels as $methodLabel) {
+    $methodLabelMap[(string)($methodLabel["value"] ?? "")] = (string)($methodLabel["label"] ?? "");
+}
+
+$currentFilters = [];
+if ($keyword !== "") {
+    $currentFilters["農薬名"] = $keyword;
+}
+if ($category !== "") {
+    $currentFilters["カテゴリ"] = $category;
+}
+if ($crop !== "") {
+    $currentFilters["作物"] = $crop;
+}
+if ($insect !== "") {
+    $currentFilters["害虫"] = $insect;
+}
+if ($disease !== "") {
+    $currentFilters["病害"] = $disease;
+}
+if ($weed !== "") {
+    $currentFilters["雑草"] = $weed;
+}
+if ($method !== "") {
+    $currentFilters["使用方法"] = $methodLabelMap[$method] ?? $method;
+}
+
+$detailCarryParams = [];
+foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", "sort", "page"] as $key) {
+    $value = $_GET[$key] ?? null;
+    if ($value === null || $value === "") {
+        continue;
+    }
+    $detailCarryParams[$key] = (string)$value;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -128,13 +165,38 @@ $BADGE_DEFS = [
                 </div>
 
                 <div class="form_row">
-                    <label for="target">病害虫</label>
-                    <select name="target" id="target" class="js-select2">
+                    <label for="insect">害虫</label>
+                    <select name="insect" id="insect" class="js-select2">
                         <option value="">指定なし</option>
-                        <!-- 病害虫プルダウン -->
-                        <?php foreach ($targetOptions as $t): ?>
+                        <?php foreach ($insectOptions as $t): ?>
                             <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php echo ($target === $t) ? "selected" : ""; ?>>
+                                <?php echo ($insect === $t) ? "selected" : ""; ?>>
+                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form_row">
+                    <label for="disease">病害</label>
+                    <select name="disease" id="disease" class="js-select2">
+                        <option value="">指定なし</option>
+                        <?php foreach ($diseaseOptions as $t): ?>
+                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                <?php echo ($disease === $t) ? "selected" : ""; ?>>
+                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form_row">
+                    <label for="weed">雑草</label>
+                    <select name="weed" id="weed" class="js-select2">
+                        <option value="">指定なし</option>
+                        <?php foreach ($weedOptions as $t): ?>
+                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                <?php echo ($weed === $t) ? "selected" : ""; ?>>
                                 <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
                             </option>
                         <?php endforeach; ?>
@@ -169,6 +231,20 @@ $BADGE_DEFS = [
 
             </form>
         </section>
+
+        <?php if ($hasSearchCondition && !empty($currentFilters)): ?>
+            <section class="current_filters_section">
+                <h2>現在の検索条件</h2>
+                <div class="current_filters_list">
+                    <?php foreach ($currentFilters as $label => $value): ?>
+                        <div class="current_filter_item">
+                            <span class="current_filter_label"><?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>：</span>
+                            <span class="current_filter_value"><?php echo htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8"); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
 
         <?php if ($hasSearchCondition): ?>
         <section class="result_section">
@@ -215,7 +291,11 @@ $BADGE_DEFS = [
                             <div class="card_title">
                                 <!-- 商品名 -->
                                 <span class="card_title_name">
-                                    <a href="./pesticide_detail.php?id=<?php echo (int)($p["pesticide_id"] ?? 0); ?>">
+                                    <?php
+                                    $detailQuery = ["id" => (int)($p["pesticide_id"] ?? 0)] + $detailCarryParams;
+                                    $detailUrl = "./pesticide_detail.php?" . http_build_query($detailQuery);
+                                    ?>
+                                    <a href="<?php echo htmlspecialchars($detailUrl, ENT_QUOTES, "UTF-8"); ?>">
                                         <?php echo htmlspecialchars(
                                             mb_convert_kana($p["name"] ?? "", "KV", "UTF-8"),
                                             ENT_QUOTES,

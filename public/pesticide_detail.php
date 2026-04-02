@@ -14,6 +14,9 @@ $displayValue = static function ($value): string {
 
 $placeholderImage = "./image/coming_soon.jpeg";
 $shopifyId = trim((string)($pesticide["shopify_id"] ?? ""));
+$backQuery = $_GET;
+unset($backQuery["id"]);
+$backUrl = "./index.php" . (!empty($backQuery) ? "?" . http_build_query($backQuery) : "");
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -34,7 +37,7 @@ $shopifyId = trim((string)($pesticide["shopify_id"] ?? ""));
         <section class="detail_page">
             <header class="detail_header">
                 <h1 class="detail_title">農薬詳細</h1>
-                <a class="detail_back" href="./index.php">一覧へ戻る</a>
+                <a class="detail_back" href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, "UTF-8"); ?>">一覧へ戻る</a>
             </header>
 
             <?php if ($pesticide === null): ?>

@@ -79,16 +79,26 @@ foreach ($quickCropLabels as $label) {
     $cropOptions[$label] = $dbValue;
 }
 
-//病害虫プルダウン(DB自動取得)
-$stmt = $pdo->prepare(
+// 害虫・病害・雑草プルダウン(DB自動取得)
+$targetTypeStmt = $pdo->prepare(
     "SELECT DISTINCT t.name
     FROM pesticide_rules pr
     JOIN targets t ON pr.target_id = t.id
-    WHERE (:category_any = '' OR pr.category = :category_filter)
+    WHERE t.target_type = :target_type
+      AND t.name <> '-'
+      AND (:category_any = '' OR pr.category = :category_filter)
     ORDER BY t.name ASC"
 );
-$stmt->execute([
-    ":category_any" => $category,
-    ":category_filter" => $category,
-]);
-$targetOptions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+$loadTargetOptions = static function (PDOStatement $stmt, string $targetType, string $category): array {
+    $stmt->execute([
+        ":target_type" => $targetType,
+        ":category_any" => $category,
+        ":category_filter" => $category,
+    ]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+};
+
+$insectOptions = $loadTargetOptions($targetTypeStmt, "害虫", $category);
+$diseaseOptions = $loadTargetOptions($targetTypeStmt, "病害", $category);
+$weedOptions = $loadTargetOptions($targetTypeStmt, "雑草", $category);
