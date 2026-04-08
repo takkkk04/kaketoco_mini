@@ -1,4 +1,5 @@
 body {
+    --app-header-offset: 88px;
     font-family: Arial, "Hiragino Sans", "Yu Gothic", sans-serif;
     background: #f4f9ff;
     color: #102030;
@@ -184,6 +185,12 @@ body {
     border: 1px solid #d7e6f7;
     border-radius: 12px;
     padding: 12px;
+}
+
+.current_filters_section_sticky {
+    position: sticky;
+    top: calc(var(--app-header-offset) - 16px);
+    z-index: 20;
 }
 
 .current_filters_section h2 {
@@ -612,7 +619,7 @@ select option {
 #result_list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 12px
+    gap: 12px;
 }
 
 .pagination {
@@ -1115,6 +1122,10 @@ select option {
 レスポンシブ対応
 ======================================== */
 @media (max-width: 899px) {
+    body {
+        --app-header-offset: 82px;
+    }
+
     .category_picker {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

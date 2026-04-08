@@ -253,7 +253,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
         </section>
 
         <?php if ($hasSearchCondition && !empty($currentFilters)): ?>
-            <section class="current_filters_section">
+            <section class="current_filters_section <?php echo !empty($shouldShowResults) ? 'current_filters_section_sticky' : ''; ?>">
                 <h2>現在の検索条件</h2>
                 <div class="current_filters_list">
                     <?php foreach ($currentFilters as $label => $value): ?>
@@ -267,7 +267,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
         <?php endif; ?>
 
         <?php if (!empty($shouldShowResults)): ?>
-        <section class="result_section">
+        <section class="result_section result_section_sticky">
 
             <div class="result_header">
                 <div class="result_left">
