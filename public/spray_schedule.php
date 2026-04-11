@@ -4,7 +4,7 @@
 // =============================================
 // ■ 防除暦 ver.0.1 ルール
 
-// ・作物：トマト固定
+// ・作物：GETパラメータで選択（デフォルト：トマト）
 // ・カテゴリ：殺虫剤 / 殺菌剤のみ
 // ・使用方法：散布のみ
 // ・剤型：乳剤 / 水溶剤 / 水和剤 / 液剤のみ
@@ -25,9 +25,40 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/../src/backend/index_bootstrap.php";
 
+// 作物候補を index_options.php から流用
+// index_options.php が要求する $category / $crops をスタブで定義
+$category = '';
+$crops = [];
+require_once __DIR__ . "/../src/backend/index_options.php";
+
+// GET から作物を受け取る（デフォルト：トマト）
 $targetCrop = "トマト";
+if (!empty($_GET['crop']) && in_array($_GET['crop'], $quickCropLabels, true)) {
+    $targetCrop = $_GET['crop'];
+}
+
+$today = new DateTimeImmutable('today');
+$startDateInput = trim((string)($_GET['start_date'] ?? $today->format('Y-m-d')));
+$startDate = DateTimeImmutable::createFromFormat('Y-m-d', $startDateInput) ?: $today;
+$startDate = $startDate->setTime(0, 0, 0);
+$startDateInput = $startDate->format('Y-m-d');
+
+$intervalDays = (int)($_GET['interval_days'] ?? 7);
+if ($intervalDays < 1) {
+    $intervalDays = 7;
+}
+
 $scheduleCount = 10;
 $allowedFormulationNames = ["乳剤", "水溶剤", "水和剤", "液剤"];
+$weekdayMap = [
+    'Sun' => '日',
+    'Mon' => '月',
+    'Tue' => '火',
+    'Wed' => '水',
+    'Thu' => '木',
+    'Fri' => '金',
+    'Sat' => '土',
+];
 
 $fetchCandidates = static function (PDO $pdo, string $category, string $cropName, array $formulationNames): array {
     $params = [
@@ -352,9 +383,14 @@ for ($i = 1; $i <= $scheduleCount; $i++) {
         $racHistory["fungicide"][$fungicideRac] = $i;
     }
 
+    $timingDate = $startDate->modify('+' . (($i - 1) * $intervalDays) . ' days');
+
+    $weekdayEn = $timingDate->format('D');
+    $weekdayJa = $weekdayMap[$weekdayEn] ?? $weekdayEn;
+
     $scheduleRows[] = [
         "round" => $i,
-        "timing" => $i . "週目",
+        "timing" => $timingDate->format('n/j') . '(' . $weekdayJa . ')',
         "insecticide_1" => $insecticide1,
         "insecticide_2" => $insecticide2,
         "fungicide" => $fungicide,
@@ -444,6 +480,40 @@ $formatMagnification = static function (?array $pesticide): string {
 
     <main class="app_main">
         <section class="result_section">
+            <form id="search_form" method="GET" action="">
+                <div class="form_row">
+                    <label for="crop_select">作物</label>
+                    <select name="crop" id="crop_select" class="js-select2 js-select2-single-chip">
+                        <?php foreach ($quickCropLabels as $label): ?>
+                            <option value="<?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>"
+                                <?php echo ($label === $targetCrop) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form_row">
+                    <label for="start_date">開始日</label>
+                    <input
+                        type="date"
+                        id="start_date"
+                        name="start_date"
+                        value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
+                </div>
+                <div class="form_row">
+                    <label for="interval_days">何日おき</label>
+                    <input
+                        type="number"
+                        id="interval_days"
+                        name="interval_days"
+                        min="1"
+                        value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
+                </div>
+                <div class="form_row_btn">
+                    <button type="submit" id="search_btn">防除暦を生成</button>
+                </div>
+            </form>
+
             <h2>防除暦 ver.0.1</h2>
             <p><?php echo htmlspecialchars($targetCrop, ENT_QUOTES, "UTF-8"); ?> / <?php echo $scheduleCount; ?>回分 / 仮生成</p>
 
