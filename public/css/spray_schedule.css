@@ -1,0 +1,162 @@
+.spray_schedule_main {
+    display: block;
+}
+
+.spray_schedule_section {
+    display: grid;
+    gap: 14px;
+}
+
+.spray_schedule_form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.spray_schedule_form .form_row {
+    flex: 1 1 180px;
+    margin-bottom: 0;
+}
+
+.spray_schedule_form .select2-container--default .select2-selection--single,
+.spray_schedule_form .select2-container--default .select2-selection--multiple {
+    min-height: 40px;
+    height: 40px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.spray_schedule_form .select2-container--default .select2-selection--single {
+    padding: 0 36px 0 10px;
+}
+
+.spray_schedule_form .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 38px;
+    font-size: 14px;
+    color: #102030;
+}
+
+.spray_schedule_form .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px;
+}
+
+.spray_schedule_inline_field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spray_schedule_inline_field input {
+    flex: 1 1 auto;
+}
+
+.spray_schedule_form input[type="date"],
+.spray_schedule_form input[type="number"] {
+    width: 100%;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #102030;
+    font-size: 14px;
+}
+
+.spray_schedule_form input[type="date"]:focus,
+.spray_schedule_form input[type="number"]:focus {
+    outline: none;
+    border-color: #1f6feb;
+    box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12);
+}
+
+.spray_schedule_inline_text {
+    color: #4a6075;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.spray_schedule_form .form_row_btn {
+    margin-top: 0;
+    flex: 0 0 auto;
+}
+
+.spray_schedule_table_wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid #d7e6f7;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.spray_schedule_table {
+    width: 100%;
+    min-width: 960px;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.spray_schedule_table thead th {
+    background: #e6f2ff;
+    color: #1f6feb;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #d7e6f7;
+    white-space: nowrap;
+}
+
+.spray_schedule_table tbody td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid #eef4fb;
+    line-height: 1.45;
+    vertical-align: top;
+}
+
+.spray_schedule_table tbody tr:hover {
+    background: #f8fbff;
+}
+
+.spray_schedule_table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+@media (max-width: 899px) {
+    .spray_schedule_form {
+        gap: 10px;
+    }
+
+    .spray_schedule_table {
+        min-width: 820px;
+    }
+
+    .spray_schedule_table thead th,
+    .spray_schedule_table tbody td {
+        font-size: 12px;
+        padding: 9px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .spray_schedule_form {
+        align-items: stretch;
+    }
+
+    .spray_schedule_form .form_row,
+    .spray_schedule_form .form_row_btn {
+        flex: 1 1 100%;
+    }
+
+    .spray_schedule_inline_field {
+        gap: 6px;
+    }
+
+    .spray_schedule_table_wrap {
+        -webkit-overflow-scrolling: touch;
+    }
+}

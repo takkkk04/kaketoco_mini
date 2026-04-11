@@ -471,16 +471,17 @@ $formatMagnification = static function (?array $pesticide): string {
     <title>防除暦作成 | カケトコ mini</title>
     <link rel="stylesheet" href="./css/reset.css">
     <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/pesticide_detail.css">
+    <link rel="stylesheet" href="./css/spray_schedule.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 
 <body>
     <?php require __DIR__ . "/parts/header.php"; ?>
 
-    <main class="app_main">
-        <section class="result_section">
-            <form id="search_form" method="GET" action="">
+    <main class="app_main spray_schedule_main">
+        <section class="result_section spray_schedule_section">
+            <h2>防除暦 ver.0.2</h2>
+            <form id="search_form" class="spray_schedule_form" method="GET" action="">
                 <div class="form_row">
                     <label for="crop_select">作物</label>
                     <select name="crop" id="crop_select" class="js-select2 js-select2-single-chip">
@@ -494,31 +495,34 @@ $formatMagnification = static function (?array $pesticide): string {
                 </div>
                 <div class="form_row">
                     <label for="start_date">開始日</label>
-                    <input
-                        type="date"
-                        id="start_date"
-                        name="start_date"
-                        value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
+                    <div class="spray_schedule_inline_field">
+                        <input
+                            type="date"
+                            id="start_date"
+                            name="start_date"
+                            value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="spray_schedule_inline_text">から</span>
+                    </div>
                 </div>
                 <div class="form_row">
-                    <label for="interval_days">何日おき</label>
-                    <input
-                        type="number"
-                        id="interval_days"
-                        name="interval_days"
-                        min="1"
-                        value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
+                    <label for="interval_days">間隔</label>
+                    <div class="spray_schedule_inline_field">
+                        <input
+                            type="number"
+                            id="interval_days"
+                            name="interval_days"
+                            min="1"
+                            value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="spray_schedule_inline_text">日おき</span>
+                    </div>
                 </div>
                 <div class="form_row_btn">
                     <button type="submit" id="search_btn">防除暦を生成</button>
                 </div>
             </form>
 
-            <h2>防除暦 ver.0.1</h2>
-            <p><?php echo htmlspecialchars($targetCrop, ENT_QUOTES, "UTF-8"); ?> / <?php echo $scheduleCount; ?>回分 / 仮生成</p>
-
-            <div class="table_wrap">
-                <table class="detail_table">
+            <div class="spray_schedule_table_wrap">
+                <table class="spray_schedule_table">
                     <thead>
                         <tr>
                             <th>日程</th>
