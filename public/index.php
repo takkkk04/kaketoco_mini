@@ -41,6 +41,8 @@ foreach ($methodLabels as $methodLabel) {
     $methodLabelMap[(string)($methodLabel["value"] ?? "")] = (string)($methodLabel["label"] ?? "");
 }
 
+$categoryUi = in_array($category, ["殺虫剤", "殺菌剤", "除草剤"], true) ? $category : "殺虫剤";
+
 $currentFilters = [];
 if ($keyword !== "") {
     $currentFilters["農薬名"] = $keyword;
@@ -135,15 +137,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                         <label for="category">カテゴリ</label>
                         <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
                             <label class="cat_item">
-                                <input type="radio" name="category" value="" <?php echo ($category === "") ? "checked" : ""; ?>>
-                                <span class="cat_btn">
-                                    <img class="cat_icon_placeholder" src="./image/icon_butterfly.png" alt="" aria-hidden="true">
-                                    <span class="cat_text">指定なし</span>
-                                </span>
-                            </label>
-
-                            <label class="cat_item">
-                                <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
+                                <input type="radio" class="js-category" name="category" value="殺虫剤" <?php echo ($categoryUi === "殺虫剤") ? "checked" : ""; ?>>
                                 <span class="cat_btn">
                                     <img src="./image/icon_butterfly.png" alt="">
                                     <span class="cat_text">殺虫剤</span>
@@ -151,7 +145,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                             </label>
 
                             <label class="cat_item">
-                                <input type="radio" name="category" value="殺菌剤" <?php echo ($category === "殺菌剤") ? "checked" : ""; ?>>
+                                <input type="radio" class="js-category" name="category" value="殺菌剤" <?php echo ($categoryUi === "殺菌剤") ? "checked" : ""; ?>>
                                 <span class="cat_btn">
                                     <img src="./image/icon_virus.png" alt="">
                                     <span class="cat_text">殺菌剤</span>
@@ -159,7 +153,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                             </label>
 
                             <label class="cat_item">
-                                <input type="radio" name="category" value="除草剤" <?php echo ($category === "除草剤") ? "checked" : ""; ?>>
+                                <input type="radio" class="js-category" name="category" value="除草剤" <?php echo ($categoryUi === "除草剤") ? "checked" : ""; ?>>
                                 <span class="cat_btn">
                                     <img src="./image/icon_leaf.png" alt="">
                                     <span class="cat_text">除草剤</span>
@@ -181,7 +175,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                         </select>
                     </div>
 
-                    <div class="form_row">
+                    <div class="form_row target_group_insect">
                         <label for="insect">害虫</label>
                         <select name="insect" id="insect" class="js-select2 js-select2-single-chip" multiple>
                             <option value="">指定なし</option>
@@ -194,7 +188,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                         </select>
                     </div>
 
-                    <div class="form_row">
+                    <div class="form_row target_group_disease">
                         <label for="disease">病害</label>
                         <select name="disease" id="disease" class="js-select2 js-select2-single-chip" multiple>
                             <option value="">指定なし</option>
@@ -207,7 +201,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
                         </select>
                     </div>
 
-                    <div class="form_row">
+                    <div class="form_row target_group_weed">
                         <label for="weed">雑草</label>
                         <select name="weed" id="weed" class="js-select2 js-select2-single-chip" multiple>
                             <option value="">指定なし</option>

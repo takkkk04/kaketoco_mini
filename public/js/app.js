@@ -140,6 +140,64 @@ $(function () {
 });
 
 // =============================================
+// カテゴリ切り替えで対象プルダウン表示を制御
+// =============================================
+$(function () {
+    const $form = $("#search_form");
+    const $categoryInputs = $(".js-category");
+    const groupMap = {
+        "殺虫剤": {
+            show: ".target_group_insect",
+            clear: ["#disease", "#weed"]
+        },
+        "殺菌剤": {
+            show: ".target_group_disease",
+            clear: ["#insect", "#weed"]
+        },
+        "除草剤": {
+            show: ".target_group_weed",
+            clear: ["#insect", "#disease"]
+        }
+    };
+
+    if ($form.length === 0 || $categoryInputs.length === 0) return;
+
+    function applyCategoryTargetVisibility(categoryValue) {
+        $(".target_group_insect, .target_group_disease, .target_group_weed").addClass("target_group_hidden");
+
+        const config = groupMap[categoryValue];
+        if (!config) return;
+
+        $(config.show).removeClass("target_group_hidden");
+    }
+
+    function clearSelectValue(selector) {
+        const $select = $(selector);
+        if ($select.length === 0) return;
+
+        $select.val(null).trigger("change.select2");
+    }
+
+    applyCategoryTargetVisibility($categoryInputs.filter(":checked").val());
+
+    $categoryInputs.on("change", function () {
+        const selectedCategory = $(this).val();
+        const config = groupMap[selectedCategory];
+
+        applyCategoryTargetVisibility(selectedCategory);
+
+        if (config) {
+            config.clear.forEach(function (selector) {
+                clearSelectValue(selector);
+            });
+        }
+
+        $("#is_search_hidden").val("");
+        $form.submit();
+    });
+});
+
+// =============================================
 // 検索結果カード作物・病害虫一覧 閉じる処理
 // =============================================
 $(function () {

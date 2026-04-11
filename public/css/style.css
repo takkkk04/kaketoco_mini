@@ -338,7 +338,7 @@ body {
 ======================================== */
 .category_picker {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
 }
 
@@ -388,6 +388,10 @@ body {
 
 .cat_item .cat_btn:active {
     transform: translateY(1px);
+}
+
+.target_group_hidden {
+    display: none;
 }
 
 /* 検索プルダウン以下
@@ -1225,7 +1229,7 @@ select option {
     }
 
     .category_picker {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     #keyword,
