@@ -65,6 +65,11 @@
     font-size: 14px;
 }
 
+.spray_schedule_form input[type="date"]:placeholder-shown,
+.spray_schedule_form input[type="number"]::placeholder {
+    color: #97a8ba;
+}
+
 .spray_schedule_form input[type="date"]:focus,
 .spray_schedule_form input[type="number"]:focus {
     outline: none;
@@ -79,8 +84,32 @@
 }
 
 .spray_schedule_form .form_row_btn {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     margin-top: 0;
     flex: 0 0 auto;
+}
+
+.spray_schedule_form #reset_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d7e6f7;
+    background: #ffffff;
+    color: #1f6feb;
+    font-weight: 700;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.spray_schedule_form #reset_btn:hover {
+    background: #f8fbff;
+    border-color: #b9d4f2;
 }
 
 .spray_schedule_export_form {
@@ -120,15 +149,19 @@
     transform: translateY(1px);
 }
 
-.spray_schedule_export_form .sub_btn[name="export"][value="csv"] {
-    background: #1f6feb;
-    border-color: #1f6feb;
-    color: #ffffff;
+.spray_schedule_export_form .sub_btn:disabled {
+    background: #eef3f8;
+    border-color: #d7e1ec;
+    color: #93a4b7;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
 }
 
-.spray_schedule_export_form .sub_btn[name="export"][value="csv"]:hover {
-    background: #1761d1;
-    border-color: #1761d1;
+.spray_schedule_export_form .sub_btn:disabled:hover {
+    background: #eef3f8;
+    border-color: #d7e1ec;
+    box-shadow: none;
 }
 
 .spray_schedule_notice {
@@ -174,6 +207,7 @@
     border-bottom: 1px solid #eef4fb;
     line-height: 1.45;
     vertical-align: top;
+    min-height: 42px;
 }
 
 .spray_schedule_table tbody tr:hover {

@@ -35,22 +35,23 @@ $request = $_SERVER["REQUEST_METHOD"] === "POST" ? $_POST : $_GET;
 $exportType = trim((string)($request["export"] ?? ""));
 $pdfExportUnsupported = false;
 
-// GET から作物を受け取る（デフォルト：トマト）
-$targetCrop = "トマト";
+// 入力値は未指定を許容し、揃ったときだけ防除暦を生成する
+$targetCrop = "";
 if (!empty($request['crop']) && in_array($request['crop'], $quickCropLabels, true)) {
     $targetCrop = $request['crop'];
 }
 
 $today = new DateTimeImmutable('today');
-$startDateInput = trim((string)($request['start_date'] ?? $today->format('Y-m-d')));
+$startDateInput = trim((string)($request['start_date'] ?? ""));
 $startDate = DateTimeImmutable::createFromFormat('Y-m-d', $startDateInput) ?: $today;
 $startDate = $startDate->setTime(0, 0, 0);
-$startDateInput = $startDate->format('Y-m-d');
 
-$intervalDays = (int)($request['interval_days'] ?? 7);
+$intervalDaysInput = trim((string)($request['interval_days'] ?? ""));
+$intervalDays = (int)$intervalDaysInput;
 if ($intervalDays < 1) {
     $intervalDays = 7;
 }
+$isScheduleGenerated = ($targetCrop !== "" && $startDateInput !== "" && $intervalDaysInput !== "");
 
 $scheduleCount = 10;
 $allowedFormulationNames = ["乳剤", "水溶剤", "水和剤", "液剤"];
@@ -313,8 +314,12 @@ $buildUsageLabel = static function (
     return $usedCount . "/" . $maxCount . "回";
 };
 
-$insecticideCandidates = $fetchCandidates($pdo, "殺虫剤", $targetCrop, $allowedFormulationNames);
-$fungicideCandidates = $fetchCandidates($pdo, "殺菌剤", $targetCrop, $allowedFormulationNames);
+$insecticideCandidates = [];
+$fungicideCandidates = [];
+if ($isScheduleGenerated) {
+    $insecticideCandidates = $fetchCandidates($pdo, "殺虫剤", $targetCrop, $allowedFormulationNames);
+    $fungicideCandidates = $fetchCandidates($pdo, "殺菌剤", $targetCrop, $allowedFormulationNames);
+}
 
 $racHistory = [
     "insecticide" => [],
@@ -323,85 +328,87 @@ $racHistory = [
 $usageHistory = [];
 
 $scheduleRows = [];
-for ($i = 1; $i <= $scheduleCount; $i++) {
-    $availableInsecticides = $filterByRacRotation($insecticideCandidates, $racHistory["insecticide"], $i);
-    if ($availableInsecticides === []) {
-        $availableInsecticides = $insecticideCandidates;
-    }
-    $availableInsecticides = $filterByUsageLimit($availableInsecticides, $usageHistory);
-    if ($availableInsecticides === []) {
-        $availableInsecticides = $filterByUsageLimit($insecticideCandidates, $usageHistory);
-    }
-
-    $availableFungicides = $filterByRacRotation($fungicideCandidates, $racHistory["fungicide"], $i);
-    if ($availableFungicides === []) {
-        $availableFungicides = $fungicideCandidates;
-    }
-    $availableFungicides = $filterByUsageLimit($availableFungicides, $usageHistory);
-    if ($availableFungicides === []) {
-        $availableFungicides = $filterByUsageLimit($fungicideCandidates, $usageHistory);
-    }
-
-    $insecticide1 = $pickRandomOne($availableInsecticides);
-    $insecticide1Id = (int)($insecticide1["id"] ?? 0);
-    $insecticide1Rac = $getRacKey($insecticide1);
-
-    $availableInsecticide2 = $availableInsecticides;
-    if ($insecticide1Id > 0) {
-        $availableInsecticide2 = $filterByDifferentPesticide($availableInsecticide2, $insecticide1Id);
-    }
-    if ($insecticide1Rac !== null) {
-        $differentRacCandidates = $filterByDifferentRac($availableInsecticide2, $insecticide1Rac);
-        if ($differentRacCandidates !== []) {
-            $availableInsecticide2 = $differentRacCandidates;
+if ($isScheduleGenerated) {
+    for ($i = 1; $i <= $scheduleCount; $i++) {
+        $availableInsecticides = $filterByRacRotation($insecticideCandidates, $racHistory["insecticide"], $i);
+        if ($availableInsecticides === []) {
+            $availableInsecticides = $insecticideCandidates;
         }
-    }
-    if ($availableInsecticide2 === [] && $insecticide1Id > 0) {
-        $availableInsecticide2 = $filterByDifferentPesticide($availableInsecticides, $insecticide1Id);
-    }
-
-    $insecticide2 = $pickRandomOne($availableInsecticide2);
-    $fungicide = $pickRandomOne($availableFungicides);
-
-    $selectedPesticides = [$insecticide1, $insecticide2, $fungicide];
-    foreach ($selectedPesticides as $selectedPesticide) {
-        $pesticideId = (int)($selectedPesticide["id"] ?? 0);
-        if ($pesticideId <= 0) {
-            continue;
+        $availableInsecticides = $filterByUsageLimit($availableInsecticides, $usageHistory);
+        if ($availableInsecticides === []) {
+            $availableInsecticides = $filterByUsageLimit($insecticideCandidates, $usageHistory);
         }
-        $usageHistory[$pesticideId] = (int)($usageHistory[$pesticideId] ?? 0) + 1;
+
+        $availableFungicides = $filterByRacRotation($fungicideCandidates, $racHistory["fungicide"], $i);
+        if ($availableFungicides === []) {
+            $availableFungicides = $fungicideCandidates;
+        }
+        $availableFungicides = $filterByUsageLimit($availableFungicides, $usageHistory);
+        if ($availableFungicides === []) {
+            $availableFungicides = $filterByUsageLimit($fungicideCandidates, $usageHistory);
+        }
+
+        $insecticide1 = $pickRandomOne($availableInsecticides);
+        $insecticide1Id = (int)($insecticide1["id"] ?? 0);
+        $insecticide1Rac = $getRacKey($insecticide1);
+
+        $availableInsecticide2 = $availableInsecticides;
+        if ($insecticide1Id > 0) {
+            $availableInsecticide2 = $filterByDifferentPesticide($availableInsecticide2, $insecticide1Id);
+        }
+        if ($insecticide1Rac !== null) {
+            $differentRacCandidates = $filterByDifferentRac($availableInsecticide2, $insecticide1Rac);
+            if ($differentRacCandidates !== []) {
+                $availableInsecticide2 = $differentRacCandidates;
+            }
+        }
+        if ($availableInsecticide2 === [] && $insecticide1Id > 0) {
+            $availableInsecticide2 = $filterByDifferentPesticide($availableInsecticides, $insecticide1Id);
+        }
+
+        $insecticide2 = $pickRandomOne($availableInsecticide2);
+        $fungicide = $pickRandomOne($availableFungicides);
+
+        $selectedPesticides = [$insecticide1, $insecticide2, $fungicide];
+        foreach ($selectedPesticides as $selectedPesticide) {
+            $pesticideId = (int)($selectedPesticide["id"] ?? 0);
+            if ($pesticideId <= 0) {
+                continue;
+            }
+            $usageHistory[$pesticideId] = (int)($usageHistory[$pesticideId] ?? 0) + 1;
+        }
+
+        $insecticideRac1 = $getRacKey($insecticide1);
+        if ($insecticideRac1 !== null) {
+            $racHistory["insecticide"][$insecticideRac1] = $i;
+        }
+
+        $insecticideRac2 = $getRacKey($insecticide2);
+        if ($insecticideRac2 !== null) {
+            $racHistory["insecticide"][$insecticideRac2] = $i;
+        }
+
+        $fungicideRac = $getRacKey($fungicide);
+        if ($fungicideRac !== null) {
+            $racHistory["fungicide"][$fungicideRac] = $i;
+        }
+
+        $timingDate = $startDate->modify('+' . (($i - 1) * $intervalDays) . ' days');
+
+        $weekdayEn = $timingDate->format('D');
+        $weekdayJa = $weekdayMap[$weekdayEn] ?? $weekdayEn;
+
+        $scheduleRows[] = [
+            "round" => $i,
+            "timing" => $timingDate->format('n/j') . '(' . $weekdayJa . ')',
+            "insecticide_1" => $insecticide1,
+            "insecticide_2" => $insecticide2,
+            "fungicide" => $fungicide,
+            "usage_label_1" => $buildUsageLabel($insecticide1, $usageHistory),
+            "usage_label_2" => $buildUsageLabel($insecticide2, $usageHistory),
+            "usage_label_3" => $buildUsageLabel($fungicide, $usageHistory),
+        ];
     }
-
-    $insecticideRac1 = $getRacKey($insecticide1);
-    if ($insecticideRac1 !== null) {
-        $racHistory["insecticide"][$insecticideRac1] = $i;
-    }
-
-    $insecticideRac2 = $getRacKey($insecticide2);
-    if ($insecticideRac2 !== null) {
-        $racHistory["insecticide"][$insecticideRac2] = $i;
-    }
-
-    $fungicideRac = $getRacKey($fungicide);
-    if ($fungicideRac !== null) {
-        $racHistory["fungicide"][$fungicideRac] = $i;
-    }
-
-    $timingDate = $startDate->modify('+' . (($i - 1) * $intervalDays) . ' days');
-
-    $weekdayEn = $timingDate->format('D');
-    $weekdayJa = $weekdayMap[$weekdayEn] ?? $weekdayEn;
-
-    $scheduleRows[] = [
-        "round" => $i,
-        "timing" => $timingDate->format('n/j') . '(' . $weekdayJa . ')',
-        "insecticide_1" => $insecticide1,
-        "insecticide_2" => $insecticide2,
-        "fungicide" => $fungicide,
-        "usage_label_1" => $buildUsageLabel($insecticide1, $usageHistory),
-        "usage_label_2" => $buildUsageLabel($insecticide2, $usageHistory),
-        "usage_label_3" => $buildUsageLabel($fungicide, $usageHistory),
-    ];
 }
 
 $formatPesticideName = static function (?array $pesticide): string {
@@ -503,6 +510,45 @@ $currentExportRows = $buildExportRows(
 );
 $schedulePayload = base64_encode((string)json_encode($currentExportRows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
+$displayRows = [];
+if ($isScheduleGenerated) {
+    foreach ($scheduleRows as $row) {
+        $displayRows[] = [
+            "timing" => (string)$row["timing"],
+            "insecticide_1" => $formatPesticideName($row["insecticide_1"]),
+            "rac_1" => $formatRac($row["insecticide_1"]),
+            "magnification_1" => $formatMagnification($row["insecticide_1"]),
+            "usage_1" => (string)($row["usage_label_1"] ?? "-"),
+            "insecticide_2" => $formatPesticideName($row["insecticide_2"]),
+            "rac_2" => $formatRac($row["insecticide_2"]),
+            "magnification_2" => $formatMagnification($row["insecticide_2"]),
+            "usage_2" => (string)($row["usage_label_2"] ?? "-"),
+            "fungicide" => $formatPesticideName($row["fungicide"]),
+            "fungicide_rac" => $formatRac($row["fungicide"]),
+            "fungicide_magnification" => $formatMagnification($row["fungicide"]),
+            "fungicide_usage" => (string)($row["usage_label_3"] ?? "-"),
+        ];
+    }
+} else {
+    for ($i = 0; $i < $scheduleCount; $i++) {
+        $displayRows[] = [
+            "timing" => "",
+            "insecticide_1" => "",
+            "rac_1" => "",
+            "magnification_1" => "",
+            "usage_1" => "",
+            "insecticide_2" => "",
+            "rac_2" => "",
+            "magnification_2" => "",
+            "usage_2" => "",
+            "fungicide" => "",
+            "fungicide_rac" => "",
+            "fungicide_magnification" => "",
+            "fungicide_usage" => "",
+        ];
+    }
+}
+
 if ($exportType === "csv") {
     $payloadRows = [];
     $payloadRaw = trim((string)($request["schedule_payload"] ?? ""));
@@ -566,7 +612,8 @@ if ($exportType === "pdf") {
             <form id="search_form" class="spray_schedule_form" method="GET" action="">
                 <div class="form_row">
                     <label for="crop_select">作物</label>
-                    <select name="crop" id="crop_select" class="js-select2 js-select2-single-chip">
+                    <select name="crop" id="crop_select" class="js-select2 js-select2-single-chip" data-placeholder="作物を選択">
+                        <option value=""></option>
                         <?php foreach ($quickCropLabels as $label): ?>
                             <option value="<?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>"
                                 <?php echo ($label === $targetCrop) ? 'selected' : ''; ?>>
@@ -582,7 +629,8 @@ if ($exportType === "pdf") {
                             type="date"
                             id="start_date"
                             name="start_date"
-                            value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
+                            value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>"
+                            placeholder="日付を選択">
                         <span class="spray_schedule_inline_text">から</span>
                     </div>
                 </div>
@@ -594,12 +642,14 @@ if ($exportType === "pdf") {
                             id="interval_days"
                             name="interval_days"
                             min="1"
-                            value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
+                            value="<?php echo htmlspecialchars($intervalDaysInput, ENT_QUOTES, 'UTF-8'); ?>"
+                            placeholder="数字を入力">
                         <span class="spray_schedule_inline_text">日おき</span>
                     </div>
                 </div>
                 <div class="form_row_btn">
                     <button type="submit" id="search_btn">防除暦を生成</button>
+                    <a href="./spray_schedule.php" id="reset_btn">リセット</a>
                 </div>
             </form>
 
@@ -629,38 +679,36 @@ if ($exportType === "pdf") {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($scheduleRows as $row): ?>
+                        <?php foreach ($displayRows as $row): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars((string)$row["timing"], ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatPesticideName($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatRac($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatMagnification($row["insecticide_1"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars((string)($row["usage_label_1"] ?? "-"), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatPesticideName($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatRac($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatMagnification($row["insecticide_2"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars((string)($row["usage_label_2"] ?? "-"), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatPesticideName($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatRac($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars($formatMagnification($row["fungicide"]), ENT_QUOTES, "UTF-8"); ?></td>
-                                <td><?php echo htmlspecialchars((string)($row["usage_label_3"] ?? "-"), ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["insecticide_1"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["rac_1"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["magnification_1"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["usage_1"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["insecticide_2"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["rac_2"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["magnification_2"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["usage_2"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["fungicide"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["fungicide_rac"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["fungicide_magnification"], ENT_QUOTES, "UTF-8"); ?></td>
+                                <td><?php echo htmlspecialchars((string)$row["fungicide_usage"], ENT_QUOTES, "UTF-8"); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
 
-            <?php if ($scheduleRows !== []): ?>
-                <form class="spray_schedule_export_form" method="POST" action="">
-                    <input type="hidden" name="crop" value="<?php echo htmlspecialchars($targetCrop, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="interval_days" value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="schedule_payload" value="<?php echo htmlspecialchars($schedulePayload, ENT_QUOTES, 'UTF-8'); ?>">
-                    <button type="submit" name="export" value="csv" class="sub_btn">CSV出力</button>
-                    <button type="submit" name="export" value="pdf" class="sub_btn">PDF出力</button>
-                    <button type="button" id="export_png_btn" class="sub_btn">画像出力</button>
-                </form>
-            <?php endif; ?>
+            <form class="spray_schedule_export_form" method="POST" action="">
+                <input type="hidden" name="crop" value="<?php echo htmlspecialchars($targetCrop, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="interval_days" value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="schedule_payload" value="<?php echo htmlspecialchars($schedulePayload, ENT_QUOTES, 'UTF-8'); ?>">
+                <button type="button" id="export_png_btn" class="sub_btn" <?php echo (!$isScheduleGenerated || $scheduleRows === []) ? 'disabled' : ''; ?>>画像で保存する</button>
+                <button type="submit" name="export" value="csv" class="sub_btn" <?php echo (!$isScheduleGenerated || $scheduleRows === []) ? 'disabled' : ''; ?>>CSV出力</button>
+                <button type="submit" name="export" value="pdf" class="sub_btn" <?php echo (!$isScheduleGenerated || $scheduleRows === []) ? 'disabled' : ''; ?>>PDF出力</button>
+            </form>
         </section>
     </main>
 

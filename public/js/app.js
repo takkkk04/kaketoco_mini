@@ -58,12 +58,14 @@ $(function () {
     $(".js-select2").each(function () {
         const $el = $(this);
         const isSingleChip = $el.hasClass("js-select2-single-chip");
+        const isMultiple = $el.prop("multiple");
+        const placeholder = $el.data("placeholder") || "指定なし";
 
         $el.select2({
             width: "100%",
-            placeholder: "指定なし",
+            placeholder: placeholder,
             allowClear: true,
-            maximumSelectionLength: isSingleChip ? 1 : 0,
+            maximumSelectionLength: isMultiple && isSingleChip ? 1 : 0,
             closeOnSelect: isSingleChip,
             matcher: function (params, data) {
                 if ($.trim(params.term) === "") {
