@@ -31,19 +31,23 @@ $category = '';
 $crops = [];
 require_once __DIR__ . "/../src/backend/index_options.php";
 
+$request = $_SERVER["REQUEST_METHOD"] === "POST" ? $_POST : $_GET;
+$exportType = trim((string)($request["export"] ?? ""));
+$pdfExportUnsupported = false;
+
 // GET から作物を受け取る（デフォルト：トマト）
 $targetCrop = "トマト";
-if (!empty($_GET['crop']) && in_array($_GET['crop'], $quickCropLabels, true)) {
-    $targetCrop = $_GET['crop'];
+if (!empty($request['crop']) && in_array($request['crop'], $quickCropLabels, true)) {
+    $targetCrop = $request['crop'];
 }
 
 $today = new DateTimeImmutable('today');
-$startDateInput = trim((string)($_GET['start_date'] ?? $today->format('Y-m-d')));
+$startDateInput = trim((string)($request['start_date'] ?? $today->format('Y-m-d')));
 $startDate = DateTimeImmutable::createFromFormat('Y-m-d', $startDateInput) ?: $today;
 $startDate = $startDate->setTime(0, 0, 0);
 $startDateInput = $startDate->format('Y-m-d');
 
-$intervalDays = (int)($_GET['interval_days'] ?? 7);
+$intervalDays = (int)($request['interval_days'] ?? 7);
 if ($intervalDays < 1) {
     $intervalDays = 7;
 }
@@ -461,6 +465,84 @@ $formatMagnification = static function (?array $pesticide): string {
 
     return $matches[1] . "倍";
 };
+
+$buildExportRows = static function (
+    array $rows,
+    callable $formatPesticideName,
+    callable $formatRac,
+    callable $formatMagnification
+): array {
+    $exportRows = [];
+
+    foreach ($rows as $row) {
+        $exportRows[] = [
+            "日程" => (string)($row["timing"] ?? "-"),
+            "殺虫剤①" => $formatPesticideName($row["insecticide_1"] ?? null),
+            "RAC①" => $formatRac($row["insecticide_1"] ?? null),
+            "倍率①" => $formatMagnification($row["insecticide_1"] ?? null),
+            "回数①" => (string)($row["usage_label_1"] ?? "-"),
+            "殺虫剤②" => $formatPesticideName($row["insecticide_2"] ?? null),
+            "RAC②" => $formatRac($row["insecticide_2"] ?? null),
+            "倍率②" => $formatMagnification($row["insecticide_2"] ?? null),
+            "回数②" => (string)($row["usage_label_2"] ?? "-"),
+            "殺菌剤" => $formatPesticideName($row["fungicide"] ?? null),
+            "RAC（殺菌剤）" => $formatRac($row["fungicide"] ?? null),
+            "倍率（殺菌剤）" => $formatMagnification($row["fungicide"] ?? null),
+            "回数（殺菌剤）" => (string)($row["usage_label_3"] ?? "-"),
+        ];
+    }
+
+    return $exportRows;
+};
+
+$currentExportRows = $buildExportRows(
+    $scheduleRows,
+    $formatPesticideName,
+    $formatRac,
+    $formatMagnification
+);
+$schedulePayload = base64_encode((string)json_encode($currentExportRows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+if ($exportType === "csv") {
+    $payloadRows = [];
+    $payloadRaw = trim((string)($request["schedule_payload"] ?? ""));
+    if ($payloadRaw !== "") {
+        $decoded = base64_decode($payloadRaw, true);
+        if ($decoded !== false) {
+            $parsed = json_decode($decoded, true);
+            if (is_array($parsed)) {
+                $payloadRows = $parsed;
+            }
+        }
+    }
+
+    $exportRows = $payloadRows !== [] ? $payloadRows : $currentExportRows;
+    $filename = sprintf(
+        'spray_schedule_%s_%s.csv',
+        preg_replace('/[^A-Za-z0-9_-]/', '_', $targetCrop),
+        $startDate->format('Ymd')
+    );
+
+    header("Content-Type: text/csv; charset=UTF-8");
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    $output = fopen("php://output", "wb");
+    if ($output !== false) {
+        fwrite($output, "\xEF\xBB\xBF");
+        if ($exportRows !== []) {
+            fputcsv($output, array_keys($exportRows[0]));
+            foreach ($exportRows as $exportRow) {
+                fputcsv($output, array_values($exportRow));
+            }
+        }
+        fclose($output);
+    }
+    exit;
+}
+
+if ($exportType === "pdf") {
+    $pdfExportUnsupported = true;
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -521,6 +603,12 @@ $formatMagnification = static function (?array $pesticide): string {
                 </div>
             </form>
 
+            <?php if ($pdfExportUnsupported): ?>
+                <p class="spray_schedule_notice">
+                    PDF出力は未対応です。現在の環境にPDFライブラリが入っていないため、CSV出力をご利用ください。
+                </p>
+            <?php endif; ?>
+
             <div class="spray_schedule_table_wrap">
                 <table class="spray_schedule_table">
                     <thead>
@@ -561,12 +649,77 @@ $formatMagnification = static function (?array $pesticide): string {
                     </tbody>
                 </table>
             </div>
+
+            <?php if ($scheduleRows !== []): ?>
+                <form class="spray_schedule_export_form" method="POST" action="">
+                    <input type="hidden" name="crop" value="<?php echo htmlspecialchars($targetCrop, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($startDateInput, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="interval_days" value="<?php echo htmlspecialchars((string)$intervalDays, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="schedule_payload" value="<?php echo htmlspecialchars($schedulePayload, ENT_QUOTES, 'UTF-8'); ?>">
+                    <button type="submit" name="export" value="csv" class="sub_btn">CSV出力</button>
+                    <button type="submit" name="export" value="pdf" class="sub_btn">PDF出力</button>
+                    <button type="button" id="export_png_btn" class="sub_btn">画像出力</button>
+                </form>
+            <?php endif; ?>
         </section>
     </main>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./js/app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const exportButton = document.getElementById("export_png_btn");
+            const tableWrap = document.querySelector(".spray_schedule_table_wrap");
+            const scheduleTable = document.querySelector(".spray_schedule_table");
+
+            if (!exportButton || !tableWrap || !scheduleTable || typeof html2canvas === "undefined") {
+                return;
+            }
+
+            exportButton.addEventListener("click", function () {
+                const cloneWrap = tableWrap.cloneNode(true);
+                const cloneTable = cloneWrap.querySelector(".spray_schedule_table");
+                const captureWidth = Math.max(
+                    scheduleTable.scrollWidth,
+                    scheduleTable.offsetWidth,
+                    tableWrap.scrollWidth
+                );
+
+                cloneWrap.style.width = captureWidth + "px";
+                cloneWrap.style.maxWidth = "none";
+                cloneWrap.style.overflow = "visible";
+                cloneWrap.style.position = "fixed";
+                cloneWrap.style.left = "-99999px";
+                cloneWrap.style.top = "0";
+                cloneWrap.style.zIndex = "-1";
+
+                if (cloneTable) {
+                    cloneTable.style.width = captureWidth + "px";
+                    cloneTable.style.minWidth = captureWidth + "px";
+                }
+
+                document.body.appendChild(cloneWrap);
+
+                html2canvas(cloneWrap, {
+                    backgroundColor: "#ffffff",
+                    scale: window.devicePixelRatio > 1 ? 2 : 1,
+                    width: captureWidth,
+                    windowWidth: captureWidth,
+                    scrollX: 0,
+                    scrollY: 0
+                }).then(function (canvas) {
+                    const link = document.createElement("a");
+                    link.href = canvas.toDataURL("image/png");
+                    link.download = "spray_schedule.png";
+                    link.click();
+                }).finally(function () {
+                    cloneWrap.remove();
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

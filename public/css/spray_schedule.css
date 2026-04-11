@@ -83,6 +83,64 @@
     flex: 0 0 auto;
 }
 
+.spray_schedule_export_form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.spray_schedule_export_form .sub_btn {
+    min-width: 120px;
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid #d7e6f7;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1f6feb;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.spray_schedule_export_form .sub_btn:hover {
+    background: #f8fbff;
+    border-color: #b9d4f2;
+    box-shadow: 0 4px 12px rgba(31, 111, 235, 0.08);
+}
+
+.spray_schedule_export_form .sub_btn:focus-visible {
+    outline: none;
+    border-color: #1f6feb;
+    box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.16);
+}
+
+.spray_schedule_export_form .sub_btn:active {
+    transform: translateY(1px);
+}
+
+.spray_schedule_export_form .sub_btn[name="export"][value="csv"] {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #ffffff;
+}
+
+.spray_schedule_export_form .sub_btn[name="export"][value="csv"]:hover {
+    background: #1761d1;
+    border-color: #1761d1;
+}
+
+.spray_schedule_notice {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #d7e6f7;
+    border-radius: 8px;
+    background: #f8fbff;
+    color: #36506b;
+    font-size: 13px;
+}
+
 .spray_schedule_table_wrap {
     width: 100%;
     max-width: 100%;
@@ -150,6 +208,10 @@
     .spray_schedule_form .form_row,
     .spray_schedule_form .form_row_btn {
         flex: 1 1 100%;
+    }
+
+    .spray_schedule_export_form {
+        flex-direction: column;
     }
 
     .spray_schedule_inline_field {
