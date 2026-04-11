@@ -111,145 +111,172 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
 
     <main class="app_main">
         <section class="search_section">
-            <h2>ザックリ検索</h2>
+            <div class="search_tabs" role="tablist" aria-label="検索モード">
+                <button type="button" class="search_tab_btn is-active" role="tab" aria-selected="true" aria-controls="search_panel_rough" data-search-tab="rough">ざっくり検索</button>
+                <button type="button" class="search_tab_btn" role="tab" aria-selected="false" aria-controls="search_panel_detail" data-search-tab="detail">詳細検索</button>
+                <button type="button" class="search_tab_btn" role="tab" aria-selected="false" aria-controls="search_panel_ai" data-search-tab="ai">AI検索</button>
+            </div>
 
-            <form id="search_form" method="GET" action="">
-                <div class="form_row">
-                    <label for="keyword">農薬名</label>
-                    <input
-                        type="search"
-                        id="keyword"
-                        name="keyword"
-                        value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, "UTF-8"); ?>"
-                        placeholder="農薬名で検索">
-                </div>
+            <div id="search_panel_rough" class="search_panel search_panel_rough is-active" data-search-panel="rough" role="tabpanel">
+                <h2>ざっくり検索</h2>
 
-                <div class="form_row">
-                    <label for="category">カテゴリ</label>
-                    <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
-                        <label class="cat_item">
-                            <input type="radio" name="category" value="" <?php echo ($category === "") ? "checked" : ""; ?>>
-                            <span class="cat_btn">
-                                <img class="cat_icon_placeholder" src="./image/icon_butterfly.png" alt="" aria-hidden="true">
-                                <span class="cat_text">指定なし</span>
-                            </span>
-                        </label>
-
-                        <label class="cat_item">
-                            <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
-                            <span class="cat_btn">
-                                <img src="./image/icon_butterfly.png" alt="">
-                                <span class="cat_text">殺虫剤</span>
-                            </span>
-                        </label>
-
-                        <label class="cat_item">
-                            <input type="radio" name="category" value="殺菌剤" <?php echo ($category === "殺菌剤") ? "checked" : ""; ?>>
-                            <span class="cat_btn">
-                                <img src="./image/icon_virus.png" alt="">
-                                <span class="cat_text">殺菌剤</span>
-                            </span>
-                        </label>
-
-                        <label class="cat_item">
-                            <input type="radio" name="category" value="除草剤" <?php echo ($category === "除草剤") ? "checked" : ""; ?>>
-                            <span class="cat_btn">
-                                <img src="./image/icon_leaf.png" alt="">
-                                <span class="cat_text">除草剤</span>
-                            </span>
-                        </label>
+                <form id="search_form" method="GET" action="">
+                    <div class="form_row">
+                        <label for="keyword">農薬名</label>
+                        <input
+                            type="search"
+                            id="keyword"
+                            name="keyword"
+                            value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, "UTF-8"); ?>"
+                            placeholder="農薬名で検索">
                     </div>
-                </div>
 
-                <div class="form_row">
-                    <label for="crop">作物名</label>
-                    <!-- キーワード検索 Select2(プルダウン内検索)-->
-                    <select name="crop[]" id="crop" class="js-select2" multiple>
-                        <option value="">指定なし</option>
-                        <!-- 作物名プルダウン -->
-                        <!-- カタカナ全角→半角処理 -->
-                        <?php foreach ($cropOptions as $label => $dbValue): ?>
-                            <!-- <select>のプルダウンの中身<option>をHTMLで作っている -->
-                            <!-- htmlspecialchars()は安全装置,記号とかをエスケープする -->
-                            <option value="<?php echo htmlspecialchars($dbValue, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php
-                                // selectedがあると検索ボタン押しても選択状態になる
-                                echo in_array($dbValue, $crops, true) ? "selected" : ""; ?>>
-                                <!-- <option>トマト</option>のトマトの部分 -->
-                                <?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form_row">
-                    <label for="insect">害虫</label>
-                    <select name="insect" id="insect" class="js-select2 js-select2-single-chip" multiple>
-                        <option value="">指定なし</option>
-                        <?php foreach ($insectOptions as $t): ?>
-                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php echo ($insect === $t) ? "selected" : ""; ?>>
-                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form_row">
-                    <label for="disease">病害</label>
-                    <select name="disease" id="disease" class="js-select2 js-select2-single-chip" multiple>
-                        <option value="">指定なし</option>
-                        <?php foreach ($diseaseOptions as $t): ?>
-                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php echo ($disease === $t) ? "selected" : ""; ?>>
-                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form_row">
-                    <label for="weed">雑草</label>
-                    <select name="weed" id="weed" class="js-select2 js-select2-single-chip" multiple>
-                        <option value="">指定なし</option>
-                        <?php foreach ($weedOptions as $t): ?>
-                            <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
-                                <?php echo ($weed === $t) ? "selected" : ""; ?>>
-                                <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form_row">
-                    <!-- 使用方法ラジオボタン -->
-                    <label for="method">使用方法</label>
-                    <div class="method_picker" role="radiogroup" aria-label="使用方法">
-                        <?php foreach ($methodLabels as $m): ?>
-                            <label class="method_item">
-                                <input type="radio" name="method"
-                                    value="<?php echo htmlspecialchars((string)$m["value"], ENT_QUOTES, "UTF-8"); ?>"
-                                    <?php echo ($method === (string)$m["value"]) ? "checked" : ""; ?>>
-                                <span class="method_btn">
-                                    <?php echo htmlspecialchars((string)$m["label"], ENT_QUOTES, "UTF-8"); ?>
+                    <div class="form_row">
+                        <label for="category">カテゴリ</label>
+                        <div class="category_picker" role="radiogroup" aria-label="カテゴリ">
+                            <label class="cat_item">
+                                <input type="radio" name="category" value="" <?php echo ($category === "") ? "checked" : ""; ?>>
+                                <span class="cat_btn">
+                                    <img class="cat_icon_placeholder" src="./image/icon_butterfly.png" alt="" aria-hidden="true">
+                                    <span class="cat_text">指定なし</span>
                                 </span>
                             </label>
-                        <?php endforeach; ?>
+
+                            <label class="cat_item">
+                                <input type="radio" name="category" value="殺虫剤" <?php echo ($category === "殺虫剤") ? "checked" : ""; ?>>
+                                <span class="cat_btn">
+                                    <img src="./image/icon_butterfly.png" alt="">
+                                    <span class="cat_text">殺虫剤</span>
+                                </span>
+                            </label>
+
+                            <label class="cat_item">
+                                <input type="radio" name="category" value="殺菌剤" <?php echo ($category === "殺菌剤") ? "checked" : ""; ?>>
+                                <span class="cat_btn">
+                                    <img src="./image/icon_virus.png" alt="">
+                                    <span class="cat_text">殺菌剤</span>
+                                </span>
+                            </label>
+
+                            <label class="cat_item">
+                                <input type="radio" name="category" value="除草剤" <?php echo ($category === "除草剤") ? "checked" : ""; ?>>
+                                <span class="cat_btn">
+                                    <img src="./image/icon_leaf.png" alt="">
+                                    <span class="cat_text">除草剤</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form_row">
+                        <label for="crop">作物名</label>
+                        <select name="crop[]" id="crop" class="js-select2" multiple>
+                            <option value="">指定なし</option>
+                            <?php foreach ($cropOptions as $label => $dbValue): ?>
+                                <option value="<?php echo htmlspecialchars($dbValue, ENT_QUOTES, "UTF-8"); ?>"
+                                    <?php echo in_array($dbValue, $crops, true) ? "selected" : ""; ?>>
+                                    <?php echo htmlspecialchars($label, ENT_QUOTES, "UTF-8"); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form_row">
+                        <label for="insect">害虫</label>
+                        <select name="insect" id="insect" class="js-select2 js-select2-single-chip" multiple>
+                            <option value="">指定なし</option>
+                            <?php foreach ($insectOptions as $t): ?>
+                                <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                    <?php echo ($insect === $t) ? "selected" : ""; ?>>
+                                    <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form_row">
+                        <label for="disease">病害</label>
+                        <select name="disease" id="disease" class="js-select2 js-select2-single-chip" multiple>
+                            <option value="">指定なし</option>
+                            <?php foreach ($diseaseOptions as $t): ?>
+                                <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                    <?php echo ($disease === $t) ? "selected" : ""; ?>>
+                                    <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form_row">
+                        <label for="weed">雑草</label>
+                        <select name="weed" id="weed" class="js-select2 js-select2-single-chip" multiple>
+                            <option value="">指定なし</option>
+                            <?php foreach ($weedOptions as $t): ?>
+                                <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>"
+                                    <?php echo ($weed === $t) ? "selected" : ""; ?>>
+                                    <?php echo htmlspecialchars($t, ENT_QUOTES, "UTF-8"); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form_row">
+                        <label for="method">使用方法</label>
+                        <div class="method_picker" role="radiogroup" aria-label="使用方法">
+                            <?php foreach ($methodLabels as $m): ?>
+                                <label class="method_item">
+                                    <input type="radio" name="method"
+                                        value="<?php echo htmlspecialchars((string)$m["value"], ENT_QUOTES, "UTF-8"); ?>"
+                                        <?php echo ($method === (string)$m["value"]) ? "checked" : ""; ?>>
+                                    <span class="method_btn">
+                                        <?php echo htmlspecialchars((string)$m["label"], ENT_QUOTES, "UTF-8"); ?>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <div class="form_row_btn">
+                        <button type="submit" id="search_btn">検索</button>
+                        <button type="button" id="reset_btn">リセット</button>
+                    </div>
+
+                    <input type="hidden" name="sort" id="sort_hidden"
+                        value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8") ?>">
+                    <input type="hidden" name="is_search" id="is_search_hidden"
+                        value="<?php echo !empty($isSearch) ? "1" : ""; ?>">
+
+                </form>
+            </div>
+
+            <div id="search_panel_detail" class="search_panel search_panel_detail" data-search-panel="detail" role="tabpanel" hidden>
+                <h2>詳細検索</h2>
+                <p class="search_panel_note">今後ここに詳細条件を追加予定です。</p>
+                <div class="search_panel_placeholder">
+                    <div class="form_row">
+                        <label for="detail_placeholder_1">仮条件</label>
+                        <input type="text" id="detail_placeholder_1" placeholder="詳細条件を追加予定" disabled>
+                    </div>
+                    <div class="form_row">
+                        <label for="detail_placeholder_2">仮条件2</label>
+                        <input type="text" id="detail_placeholder_2" placeholder="今後ここを拡張します" disabled>
                     </div>
                 </div>
+            </div>
 
-                <div class="form_row_btn">
-                    <button type="submit" id="search_btn">検索</button>
-                    <button type="button" id="reset_btn">リセット</button>
+            <div id="search_panel_ai" class="search_panel search_panel_ai" data-search-panel="ai" role="tabpanel" hidden>
+                <h2>AI検索</h2>
+                <p class="search_panel_note">自然文で条件を入力できる予定です。</p>
+                <div class="search_panel_placeholder">
+                    <div class="form_row">
+                        <label for="ai_search_placeholder">AIへの相談内容</label>
+                        <textarea id="ai_search_placeholder" rows="4" placeholder="例：トマトでアブラムシに効いて、速効性のある農薬を探したい" disabled></textarea>
+                    </div>
+                    <div class="form_row_btn">
+                        <button type="button" id="ai_search_btn" disabled>AIで探す</button>
+                    </div>
                 </div>
-
-                <!-- ソートと繋ぐ役割 -->
-                <input type="hidden" name="sort" id="sort_hidden"
-                    value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8") ?>">
-                <input type="hidden" name="is_search" id="is_search_hidden"
-                    value="<?php echo !empty($isSearch) ? "1" : ""; ?>">
-
-            </form>
+            </div>
         </section>
 
         <?php if ($hasSearchCondition && !empty($currentFilters)): ?>
