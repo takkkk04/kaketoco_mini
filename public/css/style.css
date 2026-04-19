@@ -245,6 +245,138 @@ body {
     line-height: 1.6;
 }
 
+.detail_search_block {
+    border: 1px solid #d7e6f7;
+    border-radius: 14px;
+    background: #f8fbff;
+    padding: 14px;
+}
+
+.detail_search_block_head {
+    margin-bottom: 14px;
+}
+
+.detail_search_title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    color: #1f4f89;
+}
+
+.detail_search_text {
+    margin: 0;
+    color: #5a6f84;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.detail_tree_message {
+    margin: 0;
+    color: #4a6075;
+    font-size: 13px;
+}
+
+.detail_crop_tree {
+    display: grid;
+    gap: 10px;
+}
+
+.detail_tree_node {
+    border: 1px solid #d7e6f7;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.detail_tree_node > summary {
+    list-style: none;
+    cursor: pointer;
+    position: relative;
+    padding: 12px 16px 12px 40px;
+    font-weight: 700;
+    color: #1d3652;
+}
+
+.detail_tree_node > summary::-webkit-details-marker {
+    display: none;
+}
+
+.detail_tree_node > summary::before {
+    content: "+";
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: #e6f2ff;
+    color: #1f6feb;
+    font-size: 12px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+}
+
+.detail_tree_node[open] > summary::before {
+    content: "-";
+}
+
+.detail_tree_level_1 > summary {
+    background: #eef6ff;
+}
+
+.detail_tree_level_2 > summary,
+.detail_tree_level_3 > summary,
+.detail_tree_level_4 > summary,
+.detail_tree_level_5 > summary {
+    background: #ffffff;
+    font-size: 14px;
+}
+
+.detail_tree_node_body {
+    display: grid;
+    gap: 10px;
+    padding: 0 12px 12px;
+}
+
+.detail_tree_level_2,
+.detail_tree_level_3,
+.detail_tree_level_4,
+.detail_tree_level_5 {
+    margin-top: 10px;
+}
+
+.detail_crop_check,
+.detail_tree_leaf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 8px 10px;
+    border: 1px solid #e1ebf7;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #20384f;
+    font-size: 13px;
+}
+
+.detail_tree_leaf {
+    min-height: 36px;
+}
+
+.detail_crop_check input {
+    margin: 0;
+}
+
+.detail_tree_level_3 {
+    margin-left: 12px;
+}
+
+.detail_tree_level_4,
+.detail_tree_level_5 {
+    margin-left: 24px;
+}
+
 .search_panel_placeholder {
     display: grid;
     gap: 12px;

@@ -8,6 +8,7 @@ require_once __DIR__ . "/../src/backend/index_bootstrap.php";
 require_once __DIR__ . "/../src/backend/index_helpers.php";
 require_once __DIR__ . "/../src/backend/index_search.php";
 require_once __DIR__ . "/../src/backend/index_options.php";
+require_once __DIR__ . "/../src/backend/index_detail_crop_tree.php";
 
 require_once __DIR__ . "/../src/backend/index_favorites.php";
 require_once __DIR__ . "/../src/backend/index_card_lists.php";
@@ -92,6 +93,44 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
     }
     $detailCarryParams[$key] = (string)$value;
 }
+
+$renderDetailCropNode = null;
+$renderDetailCropNode = static function (array $node) use (&$renderDetailCropNode): void {
+    $children = $node["children"] ?? [];
+    $hasChildren = !empty($children);
+    $isSelectable = !empty($node["is_selectable"]);
+    $levelClass = "detail_tree_level_" . (int)($node["level"] ?? 0);
+
+    if ($hasChildren) {
+        ?>
+        <details class="detail_tree_node <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?>">
+            <summary><?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?></summary>
+            <div class="detail_tree_node_body">
+                <?php foreach ($children as $childNode): ?>
+                    <?php $renderDetailCropNode($childNode); ?>
+                <?php endforeach; ?>
+            </div>
+        </details>
+        <?php
+        return;
+    }
+
+    if ($isSelectable) {
+        ?>
+        <label class="detail_crop_check <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?>">
+            <input type="checkbox" name="detail_crop[]" value="<?php echo htmlspecialchars((string)($node["id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>">
+            <span><?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?></span>
+        </label>
+        <?php
+        return;
+    }
+
+    ?>
+    <div class="detail_tree_leaf <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?>">
+        <?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?>
+    </div>
+    <?php
+};
 
 ?>
 
@@ -245,16 +284,24 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
 
             <div id="search_panel_detail" class="search_panel search_panel_detail" data-search-panel="detail" role="tabpanel" hidden>
                 <h2>詳細検索</h2>
-                <p class="search_panel_note">今後ここに詳細条件を追加予定です。</p>
-                <div class="search_panel_placeholder">
-                    <div class="form_row">
-                        <label for="detail_placeholder_1">仮条件</label>
-                        <input type="text" id="detail_placeholder_1" placeholder="詳細条件を追加予定" disabled>
+                <p class="search_panel_note">条件を細かく指定して農薬を探します。</p>
+                <div class="detail_search_block">
+                    <div class="detail_search_block_head">
+                        <h3 class="detail_search_title">作物を選ぶ</h3>
+                        <p class="detail_search_text">大分類・中分類を開いて対象作物を確認できます。現段階ではUI確認用で、検索条件にはまだ接続していません。</p>
                     </div>
-                    <div class="form_row">
-                        <label for="detail_placeholder_2">仮条件2</label>
-                        <input type="text" id="detail_placeholder_2" placeholder="今後ここを拡張します" disabled>
-                    </div>
+
+                    <?php if ($detailCropTreeError !== ""): ?>
+                        <p class="detail_tree_message"><?php echo htmlspecialchars($detailCropTreeError, ENT_QUOTES, "UTF-8"); ?></p>
+                    <?php elseif ($detailCropTree === []): ?>
+                        <p class="detail_tree_message">表示できる作物がありません。</p>
+                    <?php else: ?>
+                        <div class="detail_crop_tree" aria-label="作物分類ツリー">
+                            <?php foreach ($detailCropTree as $treeNode): ?>
+                                <?php $renderDetailCropNode($treeNode); ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
