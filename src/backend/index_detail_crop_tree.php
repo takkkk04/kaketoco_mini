@@ -1,7 +1,7 @@
 <?php
 
 // =============================================
-// 詳細検索用 作物ツリー
+// 詳細検索用 作物ツリー（v2）
 // =============================================
 $detailCropTree = [];
 $detailCropTreeError = "";
@@ -9,154 +9,116 @@ $detailCropTreeError = "";
 try {
     $detailCropStmt = $pdo->prepare(
         "SELECT
-            new_id,
-            original_id,
-            name,
-            level,
-            parent_id,
-            category_name,
-            mid_category_name,
-            entry_type,
-            display
-        FROM crops_master
+            cm.id,
+            cm.name,
+            cm.large_category,
+            cm.mid_category,
+            cm.small_category,
+            cm.entry_type,
+            idx.match_count
+        FROM crops_master_v2 cm
+        INNER JOIN (
+            SELECT
+                selected_crop_id,
+                COUNT(*) AS match_count
+            FROM crop_search_index_v2
+            GROUP BY selected_crop_id
+        ) idx
+            ON idx.selected_crop_id = cm.id
+        WHERE cm.entry_type = 'crop'
         ORDER BY
-            level ASC,
-            category_name ASC,
-            mid_category_name ASC,
-            name ASC"
+            cm.large_category ASC,
+            cm.mid_category ASC,
+            cm.small_category ASC,
+            cm.name ASC"
     );
     $detailCropStmt->execute();
     $detailCropRows = $detailCropStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $nodeMap = [];
+    $detailCropTreeMap = [];
+
+    $ensureBranch = static function (array &$container, string $key, string $label, int $level): void {
+        if (isset($container[$key])) {
+            return;
+        }
+
+        $container[$key] = [
+            "id" => null,
+            "name" => $label,
+            "level" => $level,
+            "entry_type" => "group",
+            "is_selectable" => false,
+            "children" => [],
+        ];
+    };
+
     foreach ($detailCropRows as $row) {
-        $nodeId = trim((string)($row["new_id"] ?? ""));
-        if ($nodeId === "") {
+        $cropId = (int)($row["id"] ?? 0);
+        $cropName = trim((string)($row["name"] ?? ""));
+        $largeCategory = trim((string)($row["large_category"] ?? ""));
+        $midCategory = trim((string)($row["mid_category"] ?? ""));
+        $smallCategory = trim((string)($row["small_category"] ?? ""));
+
+        if ($cropId <= 0 || $cropName === "" || $largeCategory === "") {
             continue;
         }
 
-        $nodeMap[$nodeId] = [
-            "id" => $nodeId,
-            "parent_id" => trim((string)($row["parent_id"] ?? "")),
-            "name" => trim((string)($row["name"] ?? "")),
-            "level" => (int)($row["level"] ?? 0),
-            "entry_type" => trim((string)($row["entry_type"] ?? "")),
-            "category_name" => trim((string)($row["category_name"] ?? "")),
-            "mid_category_name" => trim((string)($row["mid_category_name"] ?? "")),
-            "display" => (int)($row["display"] ?? 0),
-            "children" => [],
-        ];
-    }
+        $ensureBranch($detailCropTreeMap, $largeCategory, $largeCategory, 1);
+        $currentChildren =& $detailCropTreeMap[$largeCategory]["children"];
+        $currentLevel = 2;
 
-    foreach ($nodeMap as $nodeId => $node) {
-        $parentId = $node["parent_id"];
-        if ($parentId !== "" && isset($nodeMap[$parentId])) {
-            $nodeMap[$parentId]["children"][] = $nodeId;
+        if ($midCategory === "" && $smallCategory !== "") {
+            $midCategory = $smallCategory;
+            $smallCategory = "";
         }
+
+        if ($midCategory !== "") {
+            $midKey = $largeCategory . "||" . $midCategory;
+            $ensureBranch($currentChildren, $midKey, $midCategory, $currentLevel);
+            $currentChildren =& $currentChildren[$midKey]["children"];
+            $currentLevel++;
+        }
+
+        if ($smallCategory !== "") {
+            $smallKey = $largeCategory . "||" . $midCategory . "||" . $smallCategory;
+            $ensureBranch($currentChildren, $smallKey, $smallCategory, $currentLevel);
+            $currentChildren =& $currentChildren[$smallKey]["children"];
+            $currentLevel++;
+        }
+
+        $cropKey = "crop:" . (string)$cropId;
+        $currentChildren[$cropKey] = [
+            "id" => $cropId,
+            "name" => $cropName,
+            "level" => $currentLevel,
+            "entry_type" => "crop",
+            "is_selectable" => true,
+            "children" => [],
+            "match_count" => (int)($row["match_count"] ?? 0),
+        ];
+        unset($currentChildren);
     }
 
-    $sortNodeIds = static function (array &$ids) use (&$nodeMap): void {
-        usort($ids, static function (string $a, string $b) use (&$nodeMap): int {
-            $nodeA = $nodeMap[$a] ?? null;
-            $nodeB = $nodeMap[$b] ?? null;
-            if ($nodeA === null || $nodeB === null) {
-                return strcmp($a, $b);
-            }
-
-            $levelCompare = ((int)$nodeA["level"]) <=> ((int)$nodeB["level"]);
+    $sortTree = static function (array $nodes) use (&$sortTree): array {
+        uasort($nodes, static function (array $a, array $b): int {
+            $levelCompare = ((int)($a["level"] ?? 0)) <=> ((int)($b["level"] ?? 0));
             if ($levelCompare !== 0) {
                 return $levelCompare;
             }
 
-            $categoryCompare = strcmp((string)$nodeA["category_name"], (string)$nodeB["category_name"]);
-            if ($categoryCompare !== 0) {
-                return $categoryCompare;
-            }
-
-            $midCompare = strcmp((string)$nodeA["mid_category_name"], (string)$nodeB["mid_category_name"]);
-            if ($midCompare !== 0) {
-                return $midCompare;
-            }
-
-            return strcmp((string)$nodeA["name"], (string)$nodeB["name"]);
+            return strcmp((string)($a["name"] ?? ""), (string)($b["name"] ?? ""));
         });
-    };
 
-    foreach (array_keys($nodeMap) as $nodeId) {
-        $sortNodeIds($nodeMap[$nodeId]["children"]);
-    }
-
-    $categoryEntryTypes = [
-        "large_category" => true,
-        "mid_category" => true,
-    ];
-
-    $includeMap = [];
-    $markWithAncestors = static function (string $nodeId) use (&$includeMap, &$nodeMap, &$markWithAncestors): void {
-        if (isset($includeMap[$nodeId]) || !isset($nodeMap[$nodeId])) {
-            return;
-        }
-
-        $includeMap[$nodeId] = true;
-        $parentId = (string)$nodeMap[$nodeId]["parent_id"];
-        if ($parentId !== "") {
-            $markWithAncestors($parentId);
-        }
-    };
-
-    foreach ($nodeMap as $nodeId => $node) {
-        $entryType = (string)$node["entry_type"];
-        $isCategory = isset($categoryEntryTypes[$entryType]);
-        $isVisibleTerminal = !$isCategory && (int)$node["display"] === 1;
-
-        if ($isVisibleTerminal) {
-            $markWithAncestors($nodeId);
-        }
-    }
-
-    $buildTreeNode = static function (string $nodeId) use (&$nodeMap, &$includeMap, &$buildTreeNode, $categoryEntryTypes): ?array {
-        if (!isset($includeMap[$nodeId], $nodeMap[$nodeId])) {
-            return null;
-        }
-
-        $node = $nodeMap[$nodeId];
-        $children = [];
-        foreach ($node["children"] as $childId) {
-            $childNode = $buildTreeNode($childId);
-            if ($childNode !== null) {
-                $children[] = $childNode;
+        foreach ($nodes as $key => $node) {
+            if (!empty($node["children"]) && is_array($node["children"])) {
+                $nodes[$key]["children"] = $sortTree($node["children"]);
             }
         }
 
-        $entryType = (string)$node["entry_type"];
-        $isCategory = isset($categoryEntryTypes[$entryType]);
-        $isSelectable = !$isCategory && $children === [];
-
-        return [
-            "id" => (string)$node["id"],
-            "name" => (string)$node["name"],
-            "level" => (int)$node["level"],
-            "entry_type" => $entryType,
-            "is_selectable" => $isSelectable,
-            "children" => $children,
-        ];
+        return array_values($nodes);
     };
 
-    $rootIds = [];
-    foreach ($includeMap as $nodeId => $_) {
-        $parentId = (string)($nodeMap[$nodeId]["parent_id"] ?? "");
-        if ($parentId === "" || !isset($includeMap[$parentId])) {
-            $rootIds[] = $nodeId;
-        }
-    }
-
-    $sortNodeIds($rootIds);
-    foreach ($rootIds as $rootId) {
-        $treeNode = $buildTreeNode($rootId);
-        if ($treeNode !== null) {
-            $detailCropTree[] = $treeNode;
-        }
-    }
+    $detailCropTree = $sortTree($detailCropTreeMap);
 } catch (Throwable $e) {
     $detailCropTreeError = "作物ツリーを読み込めませんでした。";
 }

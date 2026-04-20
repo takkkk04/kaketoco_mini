@@ -288,7 +288,7 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
                 <div class="detail_search_block">
                     <div class="detail_search_block_head">
                         <h3 class="detail_search_title">作物を選ぶ</h3>
-                        <p class="detail_search_text">大分類・中分類を開いて対象作物を確認できます。現段階ではUI確認用で、検索条件にはまだ接続していません。</p>
+                        <p class="detail_search_text">大分類・中分類・小分類で絞り込みながら対象作物を確認できます。現段階ではUI確認用で、検索条件にはまだ接続していません。</p>
                     </div>
 
                     <?php if ($detailCropTreeError !== ""): ?>
