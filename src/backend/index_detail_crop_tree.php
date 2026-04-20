@@ -7,6 +7,21 @@ $detailCropTree = [];
 $detailCropTreeError = "";
 
 try {
+    $largeCategoryOrder = [
+        "野菜類" => 1,
+        "果樹類" => 2,
+        "穀類" => 3,
+        "花き類・観葉植物" => 4,
+        "樹木類" => 5,
+        "芝" => 6,
+        "飼料作物" => 7,
+        "薬用作物" => 8,
+        "きのこ類" => 9,
+        "その他の食用作物" => 10,
+        "その他の非食用作物" => 11,
+        "適用地帯等" => 12,
+    ];
+
     $detailCropStmt = $pdo->prepare(
         "SELECT
             cm.id,
@@ -99,9 +114,20 @@ try {
         unset($currentChildren);
     }
 
-    $sortTree = static function (array $nodes) use (&$sortTree): array {
-        uasort($nodes, static function (array $a, array $b): int {
-            $levelCompare = ((int)($a["level"] ?? 0)) <=> ((int)($b["level"] ?? 0));
+    $sortTree = static function (array $nodes) use (&$sortTree, $largeCategoryOrder): array {
+        uasort($nodes, static function (array $a, array $b) use ($largeCategoryOrder): int {
+            $levelA = (int)($a["level"] ?? 0);
+            $levelB = (int)($b["level"] ?? 0);
+
+            if ($levelA === 1 && $levelB === 1) {
+                $orderA = $largeCategoryOrder[(string)($a["name"] ?? "")] ?? 9999;
+                $orderB = $largeCategoryOrder[(string)($b["name"] ?? "")] ?? 9999;
+                if ($orderA !== $orderB) {
+                    return $orderA <=> $orderB;
+                }
+            }
+
+            $levelCompare = $levelA <=> $levelB;
             if ($levelCompare !== 0) {
                 return $levelCompare;
             }

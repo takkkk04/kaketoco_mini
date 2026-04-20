@@ -577,7 +577,9 @@ select option {
 }
 
 #search_btn,
-#reset_btn {
+#reset_btn,
+#detail_search_btn,
+#detail_reset_btn {
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid #d7e6f7;
@@ -585,13 +587,15 @@ select option {
     font-weight: bold;
 }
 
-#search_btn {
+#search_btn,
+#detail_search_btn {
     background: #1f6feb;
     color: #ffffff;
     border-color: #1f6feb;
 }
 
-#reset_btn {
+#reset_btn,
+#detail_reset_btn {
     background: #ffffff;
 }
 

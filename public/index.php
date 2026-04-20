@@ -42,6 +42,15 @@ foreach ($methodLabels as $methodLabel) {
     $methodLabelMap[(string)($methodLabel["value"] ?? "")] = (string)($methodLabel["label"] ?? "");
 }
 
+$searchMode = trim((string)($_GET["search_mode"] ?? "rough"));
+if (!in_array($searchMode, ["rough", "detail", "ai"], true)) {
+    $searchMode = "rough";
+}
+$isRoughTabActive = $searchMode === "rough";
+$isDetailTabActive = $searchMode === "detail";
+$isAiTabActive = $searchMode === "ai";
+$detailSelectedCrop = trim((string)($_GET["detail_crop"] ?? ""));
+
 $categoryUi = in_array($category, ["殺虫剤", "殺菌剤", "除草剤"], true) ? $category : "殺虫剤";
 
 $currentFilters = [];
@@ -95,7 +104,7 @@ foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", 
 }
 
 $renderDetailCropNode = null;
-$renderDetailCropNode = static function (array $node) use (&$renderDetailCropNode): void {
+$renderDetailCropNode = static function (array $node) use (&$renderDetailCropNode, $detailSelectedCrop): void {
     $children = $node["children"] ?? [];
     $hasChildren = !empty($children);
     $isSelectable = !empty($node["is_selectable"]);
@@ -118,7 +127,11 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
     if ($isSelectable) {
         ?>
         <label class="detail_crop_check <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?>">
-            <input type="checkbox" name="detail_crop[]" value="<?php echo htmlspecialchars((string)($node["id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>">
+            <input
+                type="radio"
+                name="detail_crop"
+                value="<?php echo htmlspecialchars((string)($node["id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>"
+                <?php echo ($detailSelectedCrop !== "" && $detailSelectedCrop === (string)($node["id"] ?? "")) ? "checked" : ""; ?>>
             <span><?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?></span>
         </label>
         <?php
@@ -153,12 +166,12 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
     <main class="app_main">
         <section class="search_section">
             <div class="search_tabs" role="tablist" aria-label="検索モード">
-                <button type="button" class="search_tab_btn is-active" role="tab" aria-selected="true" aria-controls="search_panel_rough" data-search-tab="rough">ざっくり検索</button>
-                <button type="button" class="search_tab_btn" role="tab" aria-selected="false" aria-controls="search_panel_detail" data-search-tab="detail">詳細検索</button>
-                <button type="button" class="search_tab_btn" role="tab" aria-selected="false" aria-controls="search_panel_ai" data-search-tab="ai">AI検索</button>
+                <button type="button" class="search_tab_btn <?php echo $isRoughTabActive ? "is-active" : ""; ?>" role="tab" aria-selected="<?php echo $isRoughTabActive ? "true" : "false"; ?>" aria-controls="search_panel_rough" data-search-tab="rough">ざっくり検索</button>
+                <button type="button" class="search_tab_btn <?php echo $isDetailTabActive ? "is-active" : ""; ?>" role="tab" aria-selected="<?php echo $isDetailTabActive ? "true" : "false"; ?>" aria-controls="search_panel_detail" data-search-tab="detail">詳細検索</button>
+                <button type="button" class="search_tab_btn <?php echo $isAiTabActive ? "is-active" : ""; ?>" role="tab" aria-selected="<?php echo $isAiTabActive ? "true" : "false"; ?>" aria-controls="search_panel_ai" data-search-tab="ai">AI検索</button>
             </div>
 
-            <div id="search_panel_rough" class="search_panel search_panel_rough is-active" data-search-panel="rough" role="tabpanel">
+            <div id="search_panel_rough" class="search_panel search_panel_rough <?php echo $isRoughTabActive ? "is-active" : ""; ?>" data-search-panel="rough" role="tabpanel" <?php echo $isRoughTabActive ? "" : "hidden"; ?>>
                 <h2>ざっくり検索</h2>
 
                 <form id="search_form" method="GET" action="">
@@ -278,34 +291,42 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
                         value="<?php echo htmlspecialchars($sort ?? "score_desk", ENT_QUOTES, "UTF-8") ?>">
                     <input type="hidden" name="is_search" id="is_search_hidden"
                         value="<?php echo !empty($isSearch) ? "1" : ""; ?>">
+                    <input type="hidden" name="search_mode" value="rough">
 
                 </form>
             </div>
 
-            <div id="search_panel_detail" class="search_panel search_panel_detail" data-search-panel="detail" role="tabpanel" hidden>
+            <div id="search_panel_detail" class="search_panel search_panel_detail <?php echo $isDetailTabActive ? "is-active" : ""; ?>" data-search-panel="detail" role="tabpanel" <?php echo $isDetailTabActive ? "" : "hidden"; ?>>
                 <h2>詳細検索</h2>
-                <p class="search_panel_note">条件を細かく指定して農薬を探します。</p>
-                <div class="detail_search_block">
-                    <div class="detail_search_block_head">
-                        <h3 class="detail_search_title">作物を選ぶ</h3>
-                        <p class="detail_search_text">大分類・中分類・小分類で絞り込みながら対象作物を確認できます。現段階ではUI確認用で、検索条件にはまだ接続していません。</p>
-                    </div>
-
-                    <?php if ($detailCropTreeError !== ""): ?>
-                        <p class="detail_tree_message"><?php echo htmlspecialchars($detailCropTreeError, ENT_QUOTES, "UTF-8"); ?></p>
-                    <?php elseif ($detailCropTree === []): ?>
-                        <p class="detail_tree_message">表示できる作物がありません。</p>
-                    <?php else: ?>
-                        <div class="detail_crop_tree" aria-label="作物分類ツリー">
-                            <?php foreach ($detailCropTree as $treeNode): ?>
-                                <?php $renderDetailCropNode($treeNode); ?>
-                            <?php endforeach; ?>
+                <form id="detail_search_form" method="GET" action="">
+                    <input type="hidden" name="search_mode" value="detail">
+                    <div class="detail_search_block">
+                        <div class="detail_search_block_head">
+                            <h3 class="detail_search_title">作物を選ぶ</h3>
+                            <p class="detail_search_text">大分類・中分類・小分類で絞り込みながら対象作物を確認できます。現段階ではUI確認用で、検索条件にはまだ接続していません。</p>
                         </div>
-                    <?php endif; ?>
-                </div>
+
+                        <?php if ($detailCropTreeError !== ""): ?>
+                            <p class="detail_tree_message"><?php echo htmlspecialchars($detailCropTreeError, ENT_QUOTES, "UTF-8"); ?></p>
+                        <?php elseif ($detailCropTree === []): ?>
+                            <p class="detail_tree_message">表示できる作物がありません。</p>
+                        <?php else: ?>
+                            <div class="detail_crop_tree" aria-label="作物分類ツリー">
+                                <?php foreach ($detailCropTree as $treeNode): ?>
+                                    <?php $renderDetailCropNode($treeNode); ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="form_row_btn">
+                            <button type="submit" id="detail_search_btn">検索</button>
+                            <button type="button" id="detail_reset_btn">リセット</button>
+                        </div>
+                    </div>
+                </form>
             </div>
 
-            <div id="search_panel_ai" class="search_panel search_panel_ai" data-search-panel="ai" role="tabpanel" hidden>
+            <div id="search_panel_ai" class="search_panel search_panel_ai <?php echo $isAiTabActive ? "is-active" : ""; ?>" data-search-panel="ai" role="tabpanel" <?php echo $isAiTabActive ? "" : "hidden"; ?>>
                 <h2>AI検索</h2>
                 <p class="search_panel_note">自然文で条件を入力できる予定です。</p>
                 <div class="search_panel_placeholder">

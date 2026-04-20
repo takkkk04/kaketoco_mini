@@ -231,6 +231,21 @@ $(function () {
 });
 
 // =============================================
+// 詳細検索 リセット
+// =============================================
+$(function () {
+    const $resetBtn = $("#detail_reset_btn");
+    if ($resetBtn.length === 0) return;
+
+    $resetBtn.on("click", function () {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("detail_crop");
+        url.searchParams.set("search_mode", "detail");
+        window.location.href = url.toString();
+    });
+});
+
+// =============================================
 // お気に入りハートボタンクリック処理(POST、色切り替え)
 // =============================================
 $(function () {
