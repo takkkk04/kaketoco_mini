@@ -40,7 +40,7 @@ try {
             GROUP BY selected_crop_id
         ) idx
             ON idx.selected_crop_id = cm.id
-        WHERE cm.entry_type = 'crop'
+        WHERE cm.entry_type IN ('crop', 'group')
         ORDER BY
             cm.large_category ASC,
             cm.mid_category ASC,
@@ -63,6 +63,8 @@ try {
             "level" => $level,
             "entry_type" => "group",
             "is_selectable" => false,
+            "is_branch_selectable" => false,
+            "match_count" => 0,
             "children" => [],
         ];
     };
@@ -73,6 +75,8 @@ try {
         $largeCategory = trim((string)($row["large_category"] ?? ""));
         $midCategory = trim((string)($row["mid_category"] ?? ""));
         $smallCategory = trim((string)($row["small_category"] ?? ""));
+        $entryType = trim((string)($row["entry_type"] ?? ""));
+        $matchCount = (int)($row["match_count"] ?? 0);
 
         if ($cropId <= 0 || $cropName === "" || $largeCategory === "") {
             continue;
@@ -85,6 +89,46 @@ try {
         if ($midCategory === "" && $smallCategory !== "") {
             $midCategory = $smallCategory;
             $smallCategory = "";
+        }
+
+        if ($entryType === "group") {
+            if ($smallCategory !== "" && $cropName === $smallCategory) {
+                $midKey = $largeCategory . "||" . $midCategory;
+                if ($midCategory !== "") {
+                    $ensureBranch($currentChildren, $midKey, $midCategory, $currentLevel);
+                    $currentChildren =& $currentChildren[$midKey]["children"];
+                    $currentLevel++;
+                }
+
+                $smallKey = $largeCategory . "||" . $midCategory . "||" . $smallCategory;
+                $ensureBranch($currentChildren, $smallKey, $smallCategory, $currentLevel);
+                $currentChildren[$smallKey]["id"] = $cropId;
+                $currentChildren[$smallKey]["is_selectable"] = true;
+                $currentChildren[$smallKey]["is_branch_selectable"] = true;
+                $currentChildren[$smallKey]["match_count"] = $matchCount;
+                unset($currentChildren);
+                continue;
+            }
+
+            if ($midCategory !== "" && $cropName === $midCategory) {
+                $midKey = $largeCategory . "||" . $midCategory;
+                $ensureBranch($currentChildren, $midKey, $midCategory, $currentLevel);
+                $currentChildren[$midKey]["id"] = $cropId;
+                $currentChildren[$midKey]["is_selectable"] = true;
+                $currentChildren[$midKey]["is_branch_selectable"] = true;
+                $currentChildren[$midKey]["match_count"] = $matchCount;
+                unset($currentChildren);
+                continue;
+            }
+
+            if ($cropName === $largeCategory) {
+                $detailCropTreeMap[$largeCategory]["id"] = $cropId;
+                $detailCropTreeMap[$largeCategory]["is_selectable"] = true;
+                $detailCropTreeMap[$largeCategory]["is_branch_selectable"] = true;
+                $detailCropTreeMap[$largeCategory]["match_count"] = $matchCount;
+            }
+            unset($currentChildren);
+            continue;
         }
 
         if ($midCategory !== "") {
@@ -108,8 +152,9 @@ try {
             "level" => $currentLevel,
             "entry_type" => "crop",
             "is_selectable" => true,
+            "is_branch_selectable" => false,
             "children" => [],
-            "match_count" => (int)($row["match_count"] ?? 0),
+            "match_count" => $matchCount,
         ];
         unset($currentChildren);
     }

@@ -9,7 +9,7 @@ $cropListStmt = $pdo->prepare(
     JOIN pesticides p ON p.id = pr.pesticide_id
     JOIN crops c ON c.id = pr.crop_id
     WHERE p.registration_number = :reg
-      AND pr.category = :category
+      AND (:category_any = '' OR pr.category = :category_filter)
     ORDER BY c.name ASC"
 );
 
@@ -19,7 +19,7 @@ $targetListStmt = $pdo->prepare(
     JOIN pesticides p ON p.id = pr.pesticide_id
     JOIN targets t ON t.id = pr.target_id
     WHERE p.registration_number = :reg
-      AND pr.category = :category
+      AND (:category_any = '' OR pr.category = :category_filter)
     ORDER BY t.name ASC"
 );
 

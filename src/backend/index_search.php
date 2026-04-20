@@ -6,6 +6,7 @@
 // =============================================
 // +++++++++++++++++++++++++++++++++++++++++++++
 $category = $_GET["category"] ?? "";
+$searchMode = trim((string)($_GET["search_mode"] ?? "rough"));
 $keyword = trim($_GET["keyword"] ?? "");
 $cropValues = $_GET["crop"] ?? [];
 if (!is_array($cropValues)) {
@@ -26,7 +27,8 @@ $diseaseRaw = $_GET["disease"] ?? "";
 $disease = trim((string)(is_array($diseaseRaw) ? ($diseaseRaw[0] ?? "") : $diseaseRaw));
 $weedRaw = $_GET["weed"] ?? "";
 $weed = trim((string)(is_array($weedRaw) ? ($weedRaw[0] ?? "") : $weedRaw));
-$method = trim($_GET["method"] ?? "散布");
+$methodDefault = ($searchMode === "detail") ? "" : "散布";
+$method = trim((string)($_GET["method"] ?? $methodDefault));
 $methodGroups = [
     "散布" => ["散布"],
     "全面土壌散布" => ["全面土壌散布"],
@@ -53,6 +55,52 @@ $methodLabels = [
 ];
 $sort = $_GET["sort"] ?? "score_desc";
 $isSearch = isset($_GET["is_search"]) && (string)$_GET["is_search"] === "1";
+$detailSelectedCropId = (int)($_GET["detail_crop"] ?? 0);
+$detailSelectedCropName = "";
+$detailMatchedCropIds = [];
+$detailMatchedCropNames = [];
+
+if ($detailSelectedCropId > 0) {
+    $detailSelectedCropStmt = $pdo->prepare(
+        "SELECT name
+        FROM crops_master_v2
+        WHERE id = :crop_id
+        LIMIT 1"
+    );
+    $detailSelectedCropStmt->execute([
+        ":crop_id" => $detailSelectedCropId,
+    ]);
+    $detailSelectedCropName = trim((string)$detailSelectedCropStmt->fetchColumn());
+
+    $detailMatchedCropStmt = $pdo->prepare(
+        "SELECT DISTINCT
+            cm.id,
+            cm.name
+        FROM crop_search_index_v2 idx
+        JOIN crops_master_v2 cm
+            ON cm.id = idx.match_crop_id
+        WHERE idx.selected_crop_id = :selected_crop_id
+        ORDER BY cm.name ASC"
+    );
+    $detailMatchedCropStmt->execute([
+        ":selected_crop_id" => $detailSelectedCropId,
+    ]);
+    $detailMatchedCropRows = $detailMatchedCropStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($detailMatchedCropRows as $detailMatchedCropRow) {
+        $matchedCropId = (int)($detailMatchedCropRow["id"] ?? 0);
+        $matchedCropName = trim((string)($detailMatchedCropRow["name"] ?? ""));
+        if ($matchedCropId <= 0 || $matchedCropName === "") {
+            continue;
+        }
+
+        $detailMatchedCropIds[$matchedCropId] = $matchedCropId;
+        $detailMatchedCropNames[$matchedCropName] = $matchedCropName;
+    }
+
+    $detailMatchedCropIds = array_values($detailMatchedCropIds);
+    $detailMatchedCropNames = array_values($detailMatchedCropNames);
+}
 
 // =============================================
 // 農薬名キーワード（スペース=OR, +=AND, -=除外）
@@ -123,11 +171,14 @@ $hasSearchCondition =
     ($category !== "") ||
     ($normalizedKeyword !== "") ||
     !empty($crops) ||
+    ($detailSelectedCropId > 0) ||
     ($insect !== "") ||
     ($disease !== "") ||
     ($weed !== "") ||
     ($method !== "");
-$shouldShowResults = $isSearch && $hasSearchCondition;
+$shouldShowResults =
+    ($isSearch && $hasSearchCondition) ||
+    ($searchMode === "detail" && $detailSelectedCropId > 0);
 
 // =============================================
 // 作物・病害虫・使用方法絞り込み処理
@@ -225,6 +276,23 @@ if ($shouldShowResults) {
         )";
     }
 
+    $detailCropWhereSql = "";
+    if (!empty($detailMatchedCropNames)) {
+        $detailCropPlaceholders = [];
+        foreach (array_values($detailMatchedCropNames) as $i => $detailCropName) {
+            $key = ":detail_crop_{$i}";
+            $detailCropPlaceholders[] = $key;
+            $pickedParams[$key] = $detailCropName;
+        }
+
+        $detailCropWhereSql = " AND p_main.id IN (
+            SELECT prd.pesticide_id
+            FROM pesticide_rules prd
+            JOIN crops cd ON cd.id = prd.crop_id
+            WHERE cd.name IN (" . implode(",", $detailCropPlaceholders) . ")
+        )";
+    }
+
 // =============================================
 // 検索処理（条件組み立て + 総件数取得 + 20件ページネーション）
 // 条件あり時のみSQL実行し、COUNT(DISTINCT pesticide_id)で総件数を計算する
@@ -242,6 +310,7 @@ if ($shouldShowResults) {
             $pickedCategoryWhereSql
             $keywordWhereSql
             $cropWhereSql
+            $detailCropWhereSql
             AND (
                 :insect1 = ''
                 OR EXISTS (

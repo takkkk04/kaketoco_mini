@@ -63,6 +63,9 @@ if ($category !== "") {
 if (!empty($crops)) {
     $currentFilters["作物"] = implode("、", $crops);
 }
+if ($detailSelectedCropName !== "") {
+    $currentFilters["詳細作物"] = $detailSelectedCropName;
+}
 if ($insect !== "") {
     $currentFilters["害虫"] = $insect;
 }
@@ -77,7 +80,7 @@ if ($method !== "") {
 }
 
 $detailCarryParams = [];
-foreach (["keyword", "category", "crop", "insect", "disease", "weed", "method", "sort", "page"] as $key) {
+foreach (["keyword", "category", "crop", "detail_crop", "insect", "disease", "weed", "method", "sort", "page", "search_mode"] as $key) {
     $value = $_GET[$key] ?? null;
     if ($value === null) {
         continue;
@@ -108,12 +111,26 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
     $children = $node["children"] ?? [];
     $hasChildren = !empty($children);
     $isSelectable = !empty($node["is_selectable"]);
+    $isBranchSelectable = !empty($node["is_branch_selectable"]);
     $levelClass = "detail_tree_level_" . (int)($node["level"] ?? 0);
 
     if ($hasChildren) {
         ?>
-        <details class="detail_tree_node <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?>">
-            <summary><?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?></summary>
+        <details class="detail_tree_node <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?> <?php echo $isBranchSelectable ? 'is-branch-selectable' : ''; ?>">
+            <summary>
+                <?php if ($isSelectable): ?>
+                    <label class="detail_tree_summary_label">
+                        <input
+                            type="radio"
+                            name="detail_crop"
+                            value="<?php echo htmlspecialchars((string)($node["id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>"
+                            <?php echo ($detailSelectedCrop !== "" && $detailSelectedCrop === (string)($node["id"] ?? "")) ? "checked" : ""; ?>>
+                        <span class="detail_tree_summary_text"><?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?></span>
+                    </label>
+                <?php else: ?>
+                    <?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?>
+                <?php endif; ?>
+            </summary>
             <div class="detail_tree_node_body">
                 <?php foreach ($children as $childNode): ?>
                     <?php $renderDetailCropNode($childNode); ?>
@@ -126,7 +143,7 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
 
     if ($isSelectable) {
         ?>
-        <label class="detail_crop_check <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?>">
+        <label class="detail_crop_check <?php echo htmlspecialchars($levelClass, ENT_QUOTES, "UTF-8"); ?> <?php echo $isBranchSelectable ? 'is-branch-selectable' : ''; ?>">
             <input
                 type="radio"
                 name="detail_crop"
@@ -386,9 +403,17 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
                         $boxId = "buy-" . $i;
                         $reg = (string)($p["registration_number"] ?? "");
                         //カード内 作物・病害虫一覧
-                        $cropListStmt->execute([":reg" => $reg, ":category" => $category]);
+                        $cropListStmt->execute([
+                            ":reg" => $reg,
+                            ":category_any" => $category,
+                            ":category_filter" => $category,
+                        ]);
                         $cropList = $cropListStmt->fetchAll(PDO::FETCH_COLUMN);
-                        $targetListStmt->execute([":reg" => $reg, ":category" => $category]);
+                        $targetListStmt->execute([
+                            ":reg" => $reg,
+                            ":category_any" => $category,
+                            ":category_filter" => $category,
+                        ]);
                         $targetList = $targetListStmt->fetchAll(PDO::FETCH_COLUMN);
                         //カード内バッジ 浸透移行性、浸達性、速効性
                         $badges = buildBadges($p, $BADGE_DEFS);

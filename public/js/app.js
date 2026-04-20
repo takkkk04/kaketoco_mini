@@ -214,19 +214,16 @@ $(function () {
 // =============================================
 $(function () {
     const $tabButtons = $(".search_tab_btn");
-    const $panels = $(".search_panel");
-
-    if ($tabButtons.length === 0 || $panels.length === 0) return;
+    if ($tabButtons.length === 0) return;
 
     $tabButtons.on("click", function () {
         const mode = $(this).data("search-tab");
         if (!mode) return;
 
-        $tabButtons.removeClass("is-active").attr("aria-selected", "false");
-        $(this).addClass("is-active").attr("aria-selected", "true");
-
-        $panels.removeClass("is-active").attr("hidden", true);
-        $('.search_panel[data-search-panel="' + mode + '"]').addClass("is-active").removeAttr("hidden");
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("search_mode", String(mode));
+        window.location.href = url.toString();
     });
 });
 

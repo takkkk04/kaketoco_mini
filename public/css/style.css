@@ -325,6 +325,21 @@ body {
     background: #eef6ff;
 }
 
+.detail_tree_summary_label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.detail_tree_summary_label input {
+    margin: 0;
+}
+
+.detail_tree_summary_text {
+    font-weight: 800;
+}
+
 .detail_tree_level_2 > summary,
 .detail_tree_level_3 > summary,
 .detail_tree_level_4 > summary,
@@ -362,6 +377,11 @@ body {
 
 .detail_tree_leaf {
     min-height: 36px;
+}
+
+.detail_crop_check.is-branch-selectable,
+.detail_tree_node.is-branch-selectable > summary {
+    font-weight: 800;
 }
 
 .detail_crop_check input {
