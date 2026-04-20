@@ -57,13 +57,20 @@ try {
             return;
         }
 
+        $categoryId = match ($level) {
+            1 => "large:" . $label,
+            2 => "mid:" . $key,
+            3 => "small:" . $key,
+            default => "cat:" . $key,
+        };
+
         $container[$key] = [
-            "id" => null,
+            "id" => $categoryId,
             "name" => $label,
             "level" => $level,
             "entry_type" => "group",
-            "is_selectable" => false,
-            "is_branch_selectable" => false,
+            "is_selectable" => true,
+            "is_branch_selectable" => true,
             "match_count" => 0,
             "children" => [],
         ];

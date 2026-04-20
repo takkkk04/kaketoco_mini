@@ -124,6 +124,7 @@ $renderDetailCropNode = static function (array $node) use (&$renderDetailCropNod
                             type="radio"
                             name="detail_crop"
                             value="<?php echo htmlspecialchars((string)($node["id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>"
+                            onclick="event.stopPropagation()"
                             <?php echo ($detailSelectedCrop !== "" && $detailSelectedCrop === (string)($node["id"] ?? "")) ? "checked" : ""; ?>>
                         <span class="detail_tree_summary_text"><?php echo htmlspecialchars((string)($node["name"] ?? ""), ENT_QUOTES, "UTF-8"); ?></span>
                     </label>
